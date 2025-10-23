@@ -81,15 +81,19 @@ test.describe('Import NFT by ID', () => {
       });
     });
 
-    await test.step('Mock the API import endpoint', async () => {
+    await test.step('Mock the API import endpoint BEFORE filling form', async () => {
       // Mock the POST /api/v1/positions/uniswapv3/import endpoint
+      // This needs to be set up before we click the import button
       await page.route('**/api/v1/positions/uniswapv3/import', async (route) => {
         const request = route.request();
         const postData = request.postDataJSON();
 
-        // Verify request payload
+        // Verify request payload - nftId is sent as number by the hook
         expect(postData.chainId).toBe(42161); // Arbitrum
-        expect(postData.nftId).toBe('4973304');
+        expect(postData.nftId).toBe(4973304); // Number, not string
+
+        // Add a small delay to simulate network request
+        await new Promise((resolve) => setTimeout(resolve, 300));
 
         // Return mock successful response
         await route.fulfill({
