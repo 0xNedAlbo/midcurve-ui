@@ -1,0 +1,56 @@
+{
+  "name": "@midcurve/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "dev:pretty": "next dev -p 3000 | pino-pretty",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "yalc:link:api-shared": "yalc add @midcurve/api-shared",
+    "yalc:update": "yalc update"
+  },
+  "dependencies": {
+    "@midcurve/api-shared": "file:.yalc/@midcurve/api-shared",
+    "@midcurve/shared": "file:../midcurve-shared",
+    "@rainbow-me/rainbowkit": "^2.2.9",
+    "@tanstack/react-query": "^5.87.1",
+    "@tanstack/react-query-devtools": "^5.87.3",
+    "@uniswap/sdk-core": "^7.7.2",
+    "@uniswap/v3-sdk": "^3.25.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "jsbi": "^4.3.2",
+    "lucide-react": "^0.542.0",
+    "next": "15.5.2",
+    "next-auth": "^5.0.0-beta.25",
+    "pino": "^9.9.5",
+    "pino-http": "^10.5.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "recharts": "^3.1.2",
+    "siwe": "^3.0.0",
+    "tailwind-merge": "^3.3.1",
+    "tw-animate-css": "^1.3.8",
+    "viem": "^2.37.3",
+    "wagmi": "^2.16.9"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.2",
+    "pino-pretty": "^13.1.2",
+    "postcss": "^8",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
