@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { UserDropdown } from "@/components/auth/user-dropdown";
+import { CreatePositionDropdown } from "@/components/positions/create-position-dropdown";
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -57,10 +58,8 @@ export default function Dashboard() {
               </p>
             </div>
 
-            {/* CreatePositionDropdown Placeholder */}
-            <div className="px-4 py-2 bg-blue-600 rounded-lg text-white">
-              ...create position button...
-            </div>
+            {/* Create Position Dropdown */}
+            <CreatePositionDropdown />
           </div>
 
           {/* PositionList Placeholder */}
