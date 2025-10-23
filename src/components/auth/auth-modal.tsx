@@ -62,6 +62,28 @@ export function AuthModal() {
     setError("");
 
     try {
+      // If signup mode, create user account first
+      if (modalType === "signup") {
+        const signupResponse = await fetch(`${API_URL}/api/v1/auth/signup`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            address,
+            chainId: chain?.id || 1,
+          }),
+        });
+
+        if (!signupResponse.ok) {
+          const errorData = await signupResponse.json();
+          if (errorData.error === "WALLET_ALREADY_REGISTERED") {
+            throw new Error("This wallet is already registered. Please sign in instead.");
+          }
+          throw new Error(errorData.message || "Failed to create account");
+        }
+      }
+
       // 1. Fetch nonce from API
       const nonceResponse = await fetch(`${API_URL}/api/v1/auth/nonce`);
 

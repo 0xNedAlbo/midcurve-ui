@@ -37,7 +37,7 @@ export const authConfig: NextAuthConfig = {
           // Return user object with address information
           return {
             id: siweMessage.address,
-            name: `User ${siweMessage.address.slice(0, 6)}...${siweMessage.address.slice(-4)}`,
+            name: `${siweMessage.address.slice(0, 6)}...${siweMessage.address.slice(-4)}`,
             email: null,
             image: null,
           } as User;
