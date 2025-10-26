@@ -10,6 +10,7 @@ import { UniswapV3Identifier } from "./protocol/uniswapv3/uniswapv3-identifier";
 import { UniswapV3RangeStatus } from "./protocol/uniswapv3/uniswapv3-range-status";
 import { UniswapV3ChainBadge } from "./protocol/uniswapv3/uniswapv3-chain-badge";
 import { UniswapV3Actions } from "./protocol/uniswapv3/uniswapv3-actions";
+import { UniswapV3MiniPnLCurve } from "./protocol/uniswapv3/uniswapv3-mini-pnl-curve";
 
 interface PositionCardProps {
   position: ListPositionData;
@@ -72,6 +73,11 @@ export function PositionCard({ position }: PositionCardProps) {
           quoteToken={quoteToken}
           isActive={position.isActive}
           isInRange={isInRange}
+          pnlCurveSlot={
+            position.protocol === "uniswapv3" ? (
+              <UniswapV3MiniPnLCurve position={position} />
+            ) : null
+          }
         />
 
         {/* RIGHT: Common Actions */}

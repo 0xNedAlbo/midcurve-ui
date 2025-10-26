@@ -23,6 +23,7 @@ interface PositionCardMetricsProps {
   quoteToken: Token;
   isActive: boolean; // Used for visual cues
   isInRange: boolean; // Used for APR calculation
+  pnlCurveSlot?: React.ReactNode; // Protocol-specific PnL curve visualization
 }
 
 export function PositionCardMetrics({
@@ -35,6 +36,7 @@ export function PositionCardMetrics({
   quoteToken,
   isActive: _isActive, // Reserved for future visual cues
   isInRange,
+  pnlCurveSlot,
 }: PositionCardMetricsProps) {
   // Format display values
   const formattedValue = formatCurrency(currentValue, quoteToken.decimals);
@@ -65,13 +67,15 @@ export function PositionCardMetrics({
         </div>
       </div>
 
-      {/* PnL Curve Visualization - Placeholder */}
+      {/* PnL Curve Visualization */}
       <div className="text-right">
         <div className="text-xs text-slate-400 mb-1">PnL Curve</div>
         <div className="flex justify-end">
-          <div className="w-[100px] h-[50px] bg-slate-700/30 rounded border border-slate-600/50 flex items-center justify-center">
-            <span className="text-xs text-slate-500">Chart</span>
-          </div>
+          {pnlCurveSlot || (
+            <div className="w-[120px] h-[60px] bg-slate-700/30 rounded border border-slate-600/50 flex items-center justify-center">
+              <span className="text-xs text-slate-500">N/A</span>
+            </div>
+          )}
         </div>
       </div>
 
