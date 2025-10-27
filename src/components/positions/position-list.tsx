@@ -185,7 +185,6 @@ export function PositionList({ className }: PositionListProps) {
       {/* Empty State */}
       {!error && !isLoading && filteredPositions.length === 0 && (
         <EmptyStateActions
-          onWizardClick={() => console.log("Wizard modal - not implemented yet")}
           onWalletImportClick={() =>
             console.log("Wallet import modal - not implemented yet")
           }

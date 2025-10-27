@@ -2,15 +2,14 @@
 
 import { Wand2, Wallet, FileText, ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { UniswapV3PositionWizard } from "./wizard/uniswapv3/uniswapv3-position-wizard";
 
 interface EmptyStateActionsProps {
-  onWizardClick: () => void;
   onWalletImportClick: () => void;
   onImportSuccess?: (position: any) => void;
 }
 
 export function EmptyStateActions({
-  onWizardClick,
   onWalletImportClick,
   onImportSuccess,
 }: EmptyStateActionsProps) {
@@ -23,6 +22,9 @@ export function EmptyStateActions({
     nftId: string;
   } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+
+  // Wizard state
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   // Helper function to format chain name for display
   const formatChainName = (chain: string): string => {
@@ -110,7 +112,7 @@ export function EmptyStateActions({
 
             {/* Action Button */}
             <button
-              onClick={onWizardClick}
+              onClick={() => setIsWizardOpen(true)}
               className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2 cursor-pointer"
             >
               Start Wizard
@@ -253,6 +255,16 @@ export function EmptyStateActions({
           </div>
         </div>
       </div>
+
+      {/* Wizard Modal */}
+      <UniswapV3PositionWizard
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        onPositionCreated={(position) => {
+          setIsWizardOpen(false);
+          onImportSuccess?.(position);
+        }}
+      />
     </div>
   );
 }

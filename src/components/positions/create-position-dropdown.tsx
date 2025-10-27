@@ -2,7 +2,9 @@
 
 import { useState, useRef } from "react";
 import { Plus, ChevronDown, Loader2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useImportPositionByNftId } from "@/hooks/positions/uniswapv3/useImportPositionByNftId";
+import { UniswapV3PositionWizard } from "./wizard/uniswapv3/uniswapv3-position-wizard";
 
 // Map chain names to chain IDs
 const CHAIN_IDS = {
@@ -23,7 +25,11 @@ export function CreatePositionDropdown() {
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
 
+  // Wizard state
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
   // Import position mutation
   const importMutation = useImportPositionByNftId();
@@ -40,11 +46,10 @@ export function CreatePositionDropdown() {
     }
   };
 
-  // Handle menu item clicks (placeholder - will trigger modals in future)
+  // Handle menu item clicks
   const handleCreateNew = () => {
-    console.log("Create New Position clicked");
+    setIsWizardOpen(true);
     setIsDropdownOpen(false);
-    // TODO: Open position wizard modal
   };
 
   const handleImportWallet = () => {
@@ -89,23 +94,24 @@ export function CreatePositionDropdown() {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      {/* Button */}
-      <button
-        onClick={toggleDropdown}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium cursor-pointer"
-      >
-        <Plus className="w-5 h-5" />
-        Add Position
-        <ChevronDown
-          className={`w-4 h-4 transition-transform duration-200 ${
-            isDropdownOpen ? "rotate-180" : ""
-          }`}
-        />
-      </button>
+    <>
+      <div className="relative" ref={dropdownRef}>
+        {/* Button */}
+        <button
+          onClick={toggleDropdown}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium cursor-pointer"
+        >
+          <Plus className="w-5 h-5" />
+          Add Position
+          <ChevronDown
+            className={`w-4 h-4 transition-transform duration-200 ${
+              isDropdownOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
 
-      {/* Dropdown Menu */}
-      {isDropdownOpen && (
+        {/* Dropdown Menu */}
+        {isDropdownOpen && (
         <div className="absolute right-0 mt-2 w-64 bg-slate-800/90 backdrop-blur-md rounded-lg border border-slate-700/50 shadow-xl shadow-black/20 z-50">
           <div className="py-2">
             {/* Option 1: Create New Position */}
@@ -215,7 +221,19 @@ export function CreatePositionDropdown() {
             )}
           </div>
         </div>
-      )}
-    </div>
+        )}
+      </div>
+
+      {/* Wizard Modal */}
+      <UniswapV3PositionWizard
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        onPositionCreated={() => {
+          setIsWizardOpen(false);
+          // Trigger position list refresh
+          queryClient.invalidateQueries({ queryKey: ['positions', 'list'] });
+        }}
+      />
+    </>
   );
 }
