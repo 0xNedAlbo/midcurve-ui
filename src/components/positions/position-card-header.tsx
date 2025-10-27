@@ -34,13 +34,6 @@ export function PositionCardHeader({
   const baseLogo = baseToken.logoUrl || `/images/tokens/${baseToken.symbol.toLowerCase()}.svg`;
   const quoteLogo = quoteToken.logoUrl || `/images/tokens/${quoteToken.symbol.toLowerCase()}.svg`;
 
-  console.log('PositionCardHeader - Tokens:', {
-    baseSymbol: baseToken.symbol,
-    quoteSymbol: quoteToken.symbol,
-    baseLogo,
-    quoteLogo
-  });
-
   const statusColor = status === "active"
     ? "text-green-400 bg-green-500/10 border-green-500/20"
     : "text-slate-400 bg-slate-500/10 border-slate-500/20";
