@@ -48,6 +48,12 @@ const nextConfig: NextConfig = {
     // External packages that should not be bundled
     config.externals.push('pino-pretty', 'lokijs', 'encoding');
 
+    // Ignore MetaMask SDK's React Native dependencies (web environment)
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@react-native-async-storage/async-storage': false,
+    };
+
     return config;
   },
 

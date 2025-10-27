@@ -4,7 +4,8 @@
  * Provides utility functions for common testing patterns.
  */
 
-import { Page, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect } from '@playwright/test';
 
 /**
  * Waits for the page to be fully loaded and hydrated

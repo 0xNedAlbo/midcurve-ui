@@ -10,8 +10,6 @@
 import type { Page } from '@playwright/test';
 import {
   TEST_WALLET_ADDRESS,
-  signMessageWithTestWallet,
-  createSiweMessage,
 } from './test-wallet';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -37,7 +35,6 @@ export async function authenticateWithRealApi(
     chainId?: number;
   }
 ): Promise<void> {
-  const domain = options?.domain || 'localhost:3000';
   const chainId = options?.chainId || 1;
 
   await page.context().addInitScript(() => {

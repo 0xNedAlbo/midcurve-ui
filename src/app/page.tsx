@@ -79,7 +79,7 @@ export default function Home() {
                                 Risk-Aware Planning
                             </h3>
                             <p className="text-slate-400">
-                                Understand your position's risk profile with our three-phase PnL visualization.
+                                Understand your position&apos;s risk profile with our three-phase PnL visualization.
                             </p>
                         </div>
 

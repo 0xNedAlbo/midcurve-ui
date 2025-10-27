@@ -5,7 +5,7 @@
  * a signed-in user (SIWE wallet connection).
  */
 
-import { Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 /**
  * Mock wallet address for testing

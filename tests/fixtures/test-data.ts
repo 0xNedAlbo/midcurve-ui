@@ -6,17 +6,15 @@
  */
 
 import type {
-  UniswapV3Position,
-  Pool,
   Erc20Token,
-} from '@midcurve/api-shared';
+} from '@midcurve/shared';
 
 /**
  * Mock ERC-20 Token: USDC
  */
 export const MOCK_USDC: Erc20Token = {
   id: 'token-1',
-  tokenType: 'evm-erc20',
+  tokenType: 'erc20',
   name: 'USD Coin',
   symbol: 'USDC',
   decimals: 6,
@@ -33,7 +31,7 @@ export const MOCK_USDC: Erc20Token = {
  */
 export const MOCK_WETH: Erc20Token = {
   id: 'token-2',
-  tokenType: 'evm-erc20',
+  tokenType: 'erc20',
   name: 'Wrapped Ether',
   symbol: 'WETH',
   decimals: 18,
@@ -48,15 +46,25 @@ export const MOCK_WETH: Erc20Token = {
 /**
  * Mock Uniswap V3 Pool: WETH/USDC 0.05%
  */
-export const MOCK_POOL: Pool = {
+export const MOCK_POOL = {
   id: 'pool-1',
-  poolType: 'uniswap-v3',
-  token0Id: MOCK_USDC.id,
-  token1Id: MOCK_WETH.id,
+  poolType: 'CL_TICKS',
+  protocol: 'uniswapv3',
+  token0: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  token1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+  feeBps: 500,
+  state: {
+    sqrtPriceX96: '0',
+    tick: 0,
+    liquidity: '0',
+  },
   config: {
     address: '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640',
     chainId: 1,
-    fee: 500,
+    token0: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    token1: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+    feeBps: 500,
+    tickSpacing: 10,
   },
   createdAt: new Date('2025-01-01T00:00:00Z'),
   updatedAt: new Date('2025-01-01T00:00:00Z'),
@@ -65,19 +73,19 @@ export const MOCK_POOL: Pool = {
 /**
  * Mock Uniswap V3 Position
  */
-export const MOCK_POSITION: UniswapV3Position = {
+export const MOCK_POSITION = {
   id: 'position-1',
-  positionType: 'uniswap-v3',
+  positionType: 'CL_TICKS',
   userId: 'user-1',
   poolId: MOCK_POOL.id,
   quoteTokenId: MOCK_USDC.id,
   baseTokenId: MOCK_WETH.id,
   config: {
-    tokenId: 123456,
     chainId: 1,
+    nftId: 123456,
+    poolAddress: '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640',
     tickLower: -887220,
     tickUpper: 887220,
-    liquidity: '1000000000000000000',
   },
   createdAt: new Date('2025-01-01T00:00:00Z'),
   updatedAt: new Date('2025-01-01T00:00:00Z'),
@@ -111,7 +119,7 @@ export const MOCK_POSITION_LIST: typeof MOCK_POSITION_ENRICHED[] = [
     id: 'position-2',
     config: {
       ...MOCK_POSITION_ENRICHED.config,
-      tokenId: 789012,
+      nftId: 789012,
     },
     totalValueInQuote: '8000.00',
     inRange: false,
@@ -121,7 +129,7 @@ export const MOCK_POSITION_LIST: typeof MOCK_POSITION_ENRICHED[] = [
     id: 'position-3',
     config: {
       ...MOCK_POSITION_ENRICHED.config,
-      tokenId: 345678,
+      nftId: 345678,
     },
     totalValueInQuote: '12000.00',
     unrealizedPnL: '-100.00',

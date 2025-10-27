@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAccount, useSignMessage } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -32,7 +32,7 @@ export function AuthModal() {
   }, [modalType]);
 
   // Close modal and remove param
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setIsOpen(false);
     setError("");
 
@@ -41,7 +41,7 @@ export function AuthModal() {
     params.delete("modal");
     const newUrl = params.toString() ? `/?${params.toString()}` : "/";
     router.push(newUrl);
-  };
+  }, [router, searchParams]);
 
   // Handle ESC key
   useEffect(() => {
@@ -53,7 +53,7 @@ export function AuthModal() {
 
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  }, [isOpen]);
+  }, [isOpen, closeModal]);
 
   const handleSiweSignIn = async () => {
     if (!address || !isConnected) return;

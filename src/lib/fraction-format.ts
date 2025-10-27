@@ -3,7 +3,7 @@
 // with thousands separators and a "zero-skip" notation for tiny values.
 // Example: 0.₍7₎1234… instead of 0.00000001234
 
-import { Fraction } from "./math";
+import type { Fraction } from "./math";
 
 export type { Fraction };
 
