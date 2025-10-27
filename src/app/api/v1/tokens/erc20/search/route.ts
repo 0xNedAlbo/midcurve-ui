@@ -34,15 +34,14 @@ const erc20TokenService = new Erc20TokenService();
  *
  * Query params:
  * - chainId (required): EVM chain ID
- * - symbol (optional): Partial symbol match (case-insensitive)
- * - name (optional): Partial name match (case-insensitive)
+ * - query (optional): Search query for symbol or name (OR logic, case-insensitive)
  * - address (optional): Contract address (exact match, case-insensitive)
- * - At least one of symbol, name, or address must be provided
+ * - At least one of query or address must be provided
  *
  * Examples:
- * GET /api/v1/tokens/erc20/search?chainId=1&symbol=usd
+ * GET /api/v1/tokens/erc20/search?chainId=1&query=usd
+ * GET /api/v1/tokens/erc20/search?chainId=1&query=weth
  * GET /api/v1/tokens/erc20/search?chainId=1&address=0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
- * GET /api/v1/tokens/erc20/search?chainId=1&address=0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48&symbol=USDC
  *
  * Returns: Array of matching token candidates from CoinGecko (max 10 results)
  *
@@ -58,8 +57,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       const { searchParams } = new URL(request.url);
       const queryParams = {
         chainId: searchParams.get('chainId'),
-        symbol: searchParams.get('symbol') || undefined,
-        name: searchParams.get('name') || undefined,
+        query: searchParams.get('query') || undefined,
         address: searchParams.get('address') || undefined,
       };
 
@@ -82,14 +80,18 @@ export async function GET(request: NextRequest): Promise<Response> {
         });
       }
 
-      const { chainId, symbol, name, address } = validation.data;
+      const { chainId, query, address } = validation.data;
 
-      // Search tokens via service (searches CoinGecko, not database)
+      // Detect if query is an address or a search term
+      const isAddress = query && /^0x[a-fA-F0-9]{40}$/.test(query);
+
+      // Search tokens via service (searches both DB and CoinGecko)
+      // If query provided, search both symbol AND name (OR logic)
       const candidates = await erc20TokenService.searchTokens({
         chainId,
-        symbol,
-        name,
-        address,
+        symbol: !isAddress && query ? query : undefined,
+        name: !isAddress && query ? query : undefined,
+        address: address || (isAddress ? query : undefined),
       });
 
       apiLogger.info({
@@ -97,8 +99,7 @@ export async function GET(request: NextRequest): Promise<Response> {
         operation: 'search',
         resourceType: 'erc20-tokens',
         chainId,
-        symbol,
-        name,
+        query,
         address: address?.slice(0, 10) + '...',
         resultsCount: candidates.length,
         msg: `Token search returned ${candidates.length} results`,

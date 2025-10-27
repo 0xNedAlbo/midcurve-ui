@@ -6,6 +6,8 @@ import type { EvmChainSlug } from "@/config/chains";
 
 import { IntroStep } from "./intro-step";
 import { ChainSelectionStep } from "./chain-selection-step";
+import { TokenPairStep } from "./token-pair-step";
+import type { TokenSearchResult } from "@/hooks/positions/wizard/useTokenSearch";
 
 interface UniswapV3PositionWizardProps {
   isOpen: boolean;
@@ -24,10 +26,10 @@ export function UniswapV3PositionWizard({
   // Wizard state (component-level, not URL-driven)
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [selectedChain, setSelectedChain] = useState<EvmChainSlug | null>(null);
+  const [baseToken, setBaseToken] = useState<TokenSearchResult | null>(null);
+  const [quoteToken, setQuoteToken] = useState<TokenSearchResult | null>(null);
 
   // Future state:
-  // const [baseToken, setBaseToken] = useState<Token | null>(null);
-  // const [quoteToken, setQuoteToken] = useState<Token | null>(null);
   // const [selectedPool, setSelectedPool] = useState<Pool | null>(null);
   // const [tickLower, setTickLower] = useState<number | null>(null);
   // const [tickUpper, setTickUpper] = useState<number | null>(null);
@@ -35,6 +37,8 @@ export function UniswapV3PositionWizard({
 
   // Validation flags
   const [isChainSelected, setIsChainSelected] = useState<boolean>(false);
+  const [isTokenPairSelected, setIsTokenPairSelected] =
+    useState<boolean>(false);
 
   // Handle closing wizard with confirmation if progress made
   const handleClose = useCallback(() => {
@@ -48,7 +52,10 @@ export function UniswapV3PositionWizard({
     // Reset all state
     setCurrentStep(0);
     setSelectedChain(null);
+    setBaseToken(null);
+    setQuoteToken(null);
     setIsChainSelected(false);
+    setIsTokenPairSelected(false);
 
     onClose?.();
   }, [currentStep, onClose]);
@@ -61,13 +68,15 @@ export function UniswapV3PositionWizard({
     // Step 1 (Chain Selection): Need chain selected
     if (currentStep === 1) return isChainSelected;
 
+    // Step 2 (Token Pair): Need both tokens selected
+    if (currentStep === 2) return isTokenPairSelected;
+
     // Future steps: Add more validation
-    // Step 2: isChainSelected && isTokenPairSelected
     // Step 3: isChainSelected && isTokenPairSelected && isPoolSelected
     // etc.
 
     return false;
-  }, [currentStep, isChainSelected]);
+  }, [currentStep, isChainSelected, isTokenPairSelected]);
 
   // Get step title
   const getStepTitle = (step: number): string => {
@@ -104,8 +113,24 @@ export function UniswapV3PositionWizard({
             }}
           />
         );
+      case 2:
+        return selectedChain ? (
+          <TokenPairStep
+            chain={selectedChain}
+            baseToken={baseToken}
+            quoteToken={quoteToken}
+            onTokenPairSelect={(base, quote) => {
+              setBaseToken(base);
+              setQuoteToken(quote);
+              setIsTokenPairSelected(true);
+            }}
+          />
+        ) : (
+          <div className="text-center text-slate-400">
+            Please select a chain first.
+          </div>
+        );
       // Future steps:
-      // case 2: return <TokenPairStep ... />;
       // case 3: return <PoolSelectionStep ... />;
       // case 4: return <PositionConfigStep ... />;
       // case 5: return <OpenPositionStep ... />;
