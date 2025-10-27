@@ -56,35 +56,35 @@ export function PositionCardMetrics({
   const pnlBigInt = BigInt(unrealizedPnl);
 
   return (
-    <div className="flex items-center gap-8 ml-auto mr-auto">
+    <div className="flex items-center gap-1 md:gap-2 lg:gap-3 xl:gap-4">
       {/* Current Value */}
-      <div className="text-right min-w-[120px]">
-        <div className="text-xs text-slate-400 mb-1">
+      <div className="text-right min-w-[80px] md:min-w-[100px] lg:min-w-[120px]">
+        <div className="text-[10px] md:text-xs text-slate-400 mb-1">
           Current Value ({quoteToken.symbol})
         </div>
-        <div className="text-base font-semibold text-white">
+        <div className="text-sm md:text-base font-semibold text-white">
           {formattedValue}
         </div>
       </div>
 
       {/* PnL Curve Visualization */}
       <div className="text-right">
-        <div className="text-xs text-slate-400 mb-1">PnL Curve</div>
+        <div className="text-[10px] md:text-xs text-slate-400 mb-1">PnL Curve</div>
         <div className="flex justify-end">
           {pnlCurveSlot || (
-            <div className="w-[120px] h-[60px] bg-slate-700/30 rounded border border-slate-600/50 flex items-center justify-center">
-              <span className="text-xs text-slate-500">N/A</span>
+            <div className="w-[80px] h-[40px] md:w-[100px] md:h-[50px] lg:w-[120px] lg:h-[60px] bg-slate-700/30 rounded border border-slate-600/50 flex items-center justify-center">
+              <span className="text-[10px] md:text-xs text-slate-500">N/A</span>
             </div>
           )}
         </div>
       </div>
 
       {/* Total PnL */}
-      <div className="text-right min-w-[120px]">
-        <div className="text-xs text-slate-400 mb-1">
+      <div className="text-right min-w-[80px] md:min-w-[100px] lg:min-w-[120px]">
+        <div className="text-[10px] md:text-xs text-slate-400 mb-1">
           Total PnL ({quoteToken.symbol})
         </div>
-        <div className={`text-base font-semibold ${pnlFormatted.colorClass}`}>
+        <div className={`text-sm md:text-base font-semibold ${pnlFormatted.colorClass}`}>
           <div className="flex items-center justify-end gap-1">
             {pnlBigInt > 0n ? (
               <TrendingUp className="w-3 h-3" />
@@ -97,11 +97,11 @@ export function PositionCardMetrics({
       </div>
 
       {/* Unclaimed Fees */}
-      <div className="text-right min-w-[100px]">
-        <div className="text-xs text-slate-400 mb-1">
+      <div className="text-right min-w-[70px] md:min-w-[90px] lg:min-w-[100px]">
+        <div className="text-[10px] md:text-xs text-slate-400 mb-1">
           Unclaimed Fees ({quoteToken.symbol})
         </div>
-        <div className={`text-base font-semibold ${
+        <div className={`text-sm md:text-base font-semibold ${
           BigInt(unClaimedFees) > 0n ? "text-amber-400" : "text-white"
         }`}>
           {formattedFees}
@@ -109,9 +109,9 @@ export function PositionCardMetrics({
       </div>
 
       {/* APR */}
-      <div className="text-right min-w-[80px]">
-        <div className="text-xs text-slate-400 mb-1">est. APR</div>
-        <div className="text-base font-semibold text-white">
+      <div className="text-right min-w-[60px] md:min-w-[70px] lg:min-w-[80px]">
+        <div className="text-[10px] md:text-xs text-slate-400 mb-1">est. APR</div>
+        <div className="text-sm md:text-base font-semibold text-white">
           {formatPercentage(apr, 2)}
         </div>
       </div>

@@ -31,7 +31,7 @@ export function UniswapV3RangeStatus({ position }: UniswapV3RangeStatusProps) {
     : "text-red-400 bg-red-500/10 border-red-500/20";
 
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium border ${rangeColor}`}>
+    <span className={`px-1.5 md:px-2 py-0.5 rounded text-[10px] md:text-xs font-medium border ${rangeColor}`}>
       {isInRange ? "In Range" : "Out of Range"}
     </span>
   );

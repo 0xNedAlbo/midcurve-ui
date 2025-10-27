@@ -46,8 +46,8 @@ export function PositionCard({ position }: PositionCardProps) {
   };
 
   return (
-    <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-slate-600/50 transition-all duration-200">
-      <div className="flex items-center">
+    <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-xl p-3 md:p-4 lg:p-6 hover:border-slate-600/50 transition-all duration-200">
+      <div className="flex items-center gap-2 md:gap-3">
         {/* LEFT: Header (protocol-agnostic with protocol-specific slots) */}
         <PositionCardHeader
           baseToken={baseToken}
@@ -69,7 +69,7 @@ export function PositionCard({ position }: PositionCardProps) {
           }
         />
 
-        {/* MIDDLE: Metrics (protocol-agnostic) */}
+        {/* MIDDLE: Metrics (protocol-agnostic) - grouped with consistent gaps */}
         <PositionCardMetrics
           currentValue={position.currentValue}
           unrealizedPnl={position.unrealizedPnl}
@@ -87,23 +87,23 @@ export function PositionCard({ position }: PositionCardProps) {
           }
         />
 
-        {/* RIGHT: Common Actions */}
-        <div className="flex items-center gap-2 ml-auto">
+        {/* RIGHT: Common Actions - pushed to the right with ml-auto */}
+        <div className="flex items-center gap-1 md:gap-2 ml-auto">
           <Link
             href={`/position/${position.protocol}/${getPositionPath(position)}`}
-            className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 md:p-2 hover:bg-slate-700/50 rounded-lg transition-colors cursor-pointer"
             title="View Details"
           >
-            <Search className="w-4 h-4 text-slate-400" />
+            <Search className="w-3.5 h-3.5 md:w-4 md:h-4 text-slate-400" />
           </Link>
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+            className="p-1.5 md:p-2 hover:bg-slate-700/50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
             title="Refresh"
           >
             <RefreshCw
-              className={`w-4 h-4 text-slate-400 ${
+              className={`w-3.5 h-3.5 md:w-4 md:h-4 text-slate-400 ${
                 isRefreshing ? "animate-spin" : ""
               }`}
             />

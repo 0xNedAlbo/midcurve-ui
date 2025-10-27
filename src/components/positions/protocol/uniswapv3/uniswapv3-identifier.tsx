@@ -52,13 +52,13 @@ export function UniswapV3Identifier({ position }: UniswapV3IdentifierProps) {
 
   return (
     <>
-      <span>•</span>
-      <span className="flex items-center gap-1">
+      <span className="hidden md:inline">•</span>
+      <span className="flex items-center gap-0.5 md:gap-1">
         <a
           href={explorerUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-400 hover:text-blue-300 underline cursor-pointer"
+          className="text-blue-400 hover:text-blue-300 underline cursor-pointer text-[10px] md:text-xs"
           title={`View on ${explorer?.name || "block explorer"}`}
         >
           #{config.nftId}
@@ -69,9 +69,9 @@ export function UniswapV3Identifier({ position }: UniswapV3IdentifierProps) {
           title="Copy NFT ID"
         >
           {copied ? (
-            <div className="text-green-400 text-xs">✓</div>
+            <div className="text-green-400 text-[10px] md:text-xs">✓</div>
           ) : (
-            <Copy className="w-3 h-3 text-slate-400 hover:text-slate-300" />
+            <Copy className="w-2.5 h-2.5 md:w-3 md:h-3 text-slate-400 hover:text-slate-300" />
           )}
         </button>
       </span>

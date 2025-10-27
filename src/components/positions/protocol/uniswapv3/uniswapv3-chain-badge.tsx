@@ -31,9 +31,9 @@ export function UniswapV3ChainBadge({ position }: UniswapV3ChainBadgeProps) {
 
   return (
     <>
-      <span>•</span>
-      <span>{chainName}</span>
-      <span>•</span>
+      <span className="hidden md:inline">•</span>
+      <span className="hidden sm:inline">{chainName}</span>
+      <span className="hidden md:inline">•</span>
       <span>{(poolConfig.feeBps / 10000).toFixed(2)}%</span>
     </>
   );
