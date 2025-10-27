@@ -24,6 +24,11 @@ export const queryKeys = {
     list: (params?: ListPositionsParams) =>
       [...queryKeys.positions.lists(), params ?? {}] as const,
 
+    // Mutation keys
+    mutations: {
+      delete: ['positions', 'delete'] as const,
+    },
+
     // Platform-SPECIFIC operations (nested by protocol)
     uniswapv3: {
       all: ['positions', 'uniswapv3'] as const,

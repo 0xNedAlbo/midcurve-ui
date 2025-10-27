@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { RefreshCw, Search, MoreVertical } from "lucide-react";
+import { RefreshCw, Search } from "lucide-react";
 import type { ListPositionData } from "@midcurve/api-shared";
 import { PositionCardHeader } from "./position-card-header";
 import { PositionCardMetrics } from "./position-card-metrics";
@@ -11,6 +11,9 @@ import { UniswapV3RangeStatus } from "./protocol/uniswapv3/uniswapv3-range-statu
 import { UniswapV3ChainBadge } from "./protocol/uniswapv3/uniswapv3-chain-badge";
 import { UniswapV3Actions } from "./protocol/uniswapv3/uniswapv3-actions";
 import { UniswapV3MiniPnLCurve } from "./protocol/uniswapv3/uniswapv3-mini-pnl-curve";
+import { PositionActionsMenu } from "./position-actions-menu";
+import { DeletePositionModal } from "./delete-position-modal";
+import { useIsDeletingPosition } from "@/hooks/positions/useDeletePosition";
 
 interface PositionCardProps {
   position: ListPositionData;
@@ -18,6 +21,10 @@ interface PositionCardProps {
 
 export function PositionCard({ position }: PositionCardProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Check if this specific position is being deleted
+  const isDeleting = useIsDeletingPosition(position.id);
 
   // Extract common data (works for ALL protocols)
   const quoteToken = position.isToken0Quote
@@ -101,13 +108,10 @@ export function PositionCard({ position }: PositionCardProps) {
               }`}
             />
           </button>
-          <button
-            onClick={() => console.log("Actions menu clicked")}
-            className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors cursor-pointer"
-            title="More actions"
-          >
-            <MoreVertical className="w-4 h-4 text-slate-400" />
-          </button>
+          <PositionActionsMenu
+            onDelete={() => setShowDeleteModal(true)}
+            isDeleting={isDeleting}
+          />
         </div>
       </div>
 
@@ -116,6 +120,16 @@ export function PositionCard({ position }: PositionCardProps) {
         <UniswapV3Actions position={position} isInRange={isInRange} />
       )}
       {/* Future: Orca, other protocols */}
+
+      {/* Delete Position Modal */}
+      <DeletePositionModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        position={position}
+        onDeleteSuccess={() => {
+          // Modal closes automatically after cache invalidation completes
+        }}
+      />
     </div>
   );
 }
