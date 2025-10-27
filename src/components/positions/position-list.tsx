@@ -43,26 +43,11 @@ export function PositionList({ className }: PositionListProps) {
   );
 
   // Fetch positions from API
-  const { data, isLoading, error, refetch, isFetching, dataUpdatedAt } = usePositionsList(queryParams);
-
-  // Log data changes for debugging
-  console.log(`[POSITION-LIST] Query state:`, {
-    isLoading,
-    isFetching,
-    error: error?.message,
-    positionCount: data?.data?.length || 0,
-    dataUpdatedAt: dataUpdatedAt ? new Date(dataUpdatedAt).toISOString() : 'never',
-    queryParams,
-  });
+  const { data, isLoading, error, refetch } = usePositionsList(queryParams);
 
   // Client-side chain filtering (API doesn't support chain filter)
   const filteredPositions = useMemo(() => {
-    if (!data?.data) {
-      console.log(`[POSITION-LIST] No data available for filtering`);
-      return [];
-    }
-
-    console.log(`[POSITION-LIST] Filtering ${data.data.length} positions (chain filter: ${filterChain})`);
+    if (!data?.data) return [];
 
     if (filterChain === "all") {
       return data.data;

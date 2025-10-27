@@ -53,8 +53,6 @@ export function DeletePositionModal({
   const handleDelete = async () => {
     try {
       const endpoint = getDeleteEndpoint(position);
-      console.log(`[MODAL] Delete button clicked - Position: ${position.id}`);
-      console.log(`[MODAL] Delete endpoint: ${endpoint}`);
 
       // Use mutateAsync instead of mutate to properly await the result
       await deletePosition.mutateAsync({
@@ -62,18 +60,14 @@ export function DeletePositionModal({
         positionId: position.id,
       });
 
-      console.log(`[MODAL] Delete mutation completed successfully`);
-      console.log(`[MODAL] Calling onDeleteSuccess callback...`);
-
       // Call parent callback to handle any additional logic
       onDeleteSuccess?.();
 
-      console.log(`[MODAL] Calling onClose to close modal...`);
+      // Close modal after successful deletion
       onClose();
-      console.log(`[MODAL] Modal close triggered`);
     } catch (error) {
-      console.error("[MODAL] Failed to delete position:", error);
       // Error is already displayed in the modal UI via deletePosition.isError
+      console.error('Failed to delete position:', error);
     }
   };
 

@@ -64,39 +64,15 @@ export function useDeletePosition(
     },
 
     onSuccess: async (_, variables) => {
-      console.log(`[DELETE] Position ${variables.positionId} - API delete successful, starting cache invalidation...`);
-
       // Wait for cache invalidation and refetch to complete
-      const result = await queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({
         queryKey: queryKeys.positions.lists(),
       });
-
-      console.log(`[DELETE] Position ${variables.positionId} - Cache invalidation complete. Invalidated queries:`, result);
-      console.log(`[DELETE] Position ${variables.positionId} - Checking query cache state...`);
-
-      // Log current cache state
-      const queries = queryClient.getQueryCache().findAll({
-        queryKey: queryKeys.positions.lists(),
-      });
-
-      queries.forEach((query, index) => {
-        console.log(`[DELETE] Query ${index + 1}:`, {
-          queryKey: query.queryKey,
-          state: query.state.status,
-          dataUpdatedAt: query.state.dataUpdatedAt,
-          isFetching: query.state.fetchStatus === 'fetching',
-        });
-      });
-
-      console.log(`[DELETE] Position ${variables.positionId} - onSuccess callback complete, modal will close now`);
     },
 
     onError: (error, variables) => {
-      // Log deletion error for debugging
-      console.error(
-        `Failed to delete position ${variables.positionId}:`,
-        error
-      );
+      // Error is handled by the component UI
+      console.error('Failed to delete position:', error);
     },
 
     ...options,
