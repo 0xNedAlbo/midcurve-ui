@@ -31,7 +31,6 @@ export interface UseTokenSearchOptions {
   type?: 'base' | 'quote'; // For future filtering if needed
   enabled?: boolean;
   debounceMs?: number;
-  limit?: number;
 }
 
 /**
@@ -75,7 +74,6 @@ export function useTokenSearch({
   type,
   enabled = true,
   debounceMs = 300,
-  limit = 20,
 }: UseTokenSearchOptions): UseTokenSearchReturn {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<TokenSearchResult[]>([]);
@@ -149,7 +147,7 @@ export function useTokenSearch({
         setIsLoading(false);
       }
     },
-    [chain, type, limit, enabled]
+    [chain, type, enabled]
   );
 
   // Search when debounced query changes and is long enough

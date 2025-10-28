@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 import {
   Search,
   Loader2,
@@ -86,9 +87,11 @@ function TokenInput({
       {selection.token && (
         <div className="mt-2 flex items-center gap-2 p-2 bg-slate-800 rounded border border-slate-700">
           {selection.token.logoUrl && (
-            <img
+            <Image
               src={selection.token.logoUrl}
               alt={selection.token.symbol}
+              width={24}
+              height={24}
               className="w-6 h-6 rounded-full"
             />
           )}
@@ -192,9 +195,11 @@ function TokenInput({
             >
               <div className="flex items-center gap-3">
                 {token.logoUrl && (
-                  <img
+                  <Image
                     src={token.logoUrl}
                     alt={token.symbol}
+                    width={24}
+                    height={24}
                     className="w-6 h-6 rounded-full flex-shrink-0"
                   />
                 )}
@@ -260,7 +265,7 @@ function TokenInput({
       {searchHook.isEmpty && (
         <div className="mt-2 text-sm text-slate-400 flex items-center gap-2">
           <AlertCircle className="w-4 h-4" />
-          No tokens found for "{searchHook.debouncedQuery}"
+          No tokens found for &quot;{searchHook.debouncedQuery}&quot;
         </div>
       )}
     </div>

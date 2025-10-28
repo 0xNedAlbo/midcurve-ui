@@ -63,14 +63,14 @@ export function useDeletePosition(
       return;
     },
 
-    onSuccess: async (_, variables) => {
+    onSuccess: async () => {
       // Wait for cache invalidation and refetch to complete
       await queryClient.invalidateQueries({
         queryKey: queryKeys.positions.lists(),
       });
     },
 
-    onError: (error, variables) => {
+    onError: (error) => {
       // Error is handled by the component UI
       console.error('Failed to delete position:', error);
     },
