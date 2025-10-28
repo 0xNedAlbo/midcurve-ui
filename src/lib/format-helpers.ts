@@ -173,7 +173,39 @@ export function formatTokenAmount(
  */
 export function formatFeeTier(feeTier: number): string {
   const percentage = feeTier / 10000;
-  // Show 1 decimal for most tiers, 2 decimals for 0.01% tier
-  const decimals = feeTier === 100 ? 2 : percentage < 1 ? 1 : 0;
+  // Show 2 decimals for 0.01% and 0.05% tiers, 1 decimal for 0.3%, 0 decimals for 1%
+  const decimals = feeTier === 100 || feeTier === 500 ? 2 : percentage < 1 ? 1 : 0;
   return formatPercentage(percentage, decimals);
+}
+
+/**
+ * Formats USD values from subgraph/API (compact notation)
+ *
+ * Used for pool metrics like TVL, volume, fees.
+ * Returns "N/A" for missing or zero values.
+ *
+ * @param usdString - USD value as string (from subgraph)
+ * @returns Formatted string like "$123.4M", "$45.6K", or "N/A"
+ *
+ * @example
+ * formatUSDValue("123456789.50") // "$123.5M"
+ * formatUSDValue("12345.67")     // "$12.3K"
+ * formatUSDValue("0")            // "N/A"
+ * formatUSDValue(undefined)      // "N/A"
+ */
+export function formatUSDValue(usdString?: string): string {
+  if (!usdString || usdString === '0') return 'N/A';
+
+  const usdNum = parseFloat(usdString);
+
+  if (isNaN(usdNum) || usdNum === 0) return 'N/A';
+
+  // Billion
+  if (usdNum >= 1e9) return `$${(usdNum / 1e9).toFixed(1)}B`;
+  // Million
+  if (usdNum >= 1e6) return `$${(usdNum / 1e6).toFixed(1)}M`;
+  // Thousand
+  if (usdNum >= 1e3) return `$${(usdNum / 1e3).toFixed(1)}K`;
+  // Less than 1K
+  return `$${usdNum.toFixed(2)}`;
 }

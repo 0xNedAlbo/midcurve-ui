@@ -3,10 +3,12 @@
 import { useState, useCallback } from "react";
 import { X, ArrowLeft, ArrowRight } from "lucide-react";
 import type { EvmChainSlug } from "@/config/chains";
+import type { PoolDiscoveryResult } from "@midcurve/shared";
 
 import { IntroStep } from "./intro-step";
 import { ChainSelectionStep } from "./chain-selection-step";
 import { TokenPairStep } from "./token-pair-step";
+import { PoolSelectionStep } from "./pool-selection-step";
 import type { TokenSearchResult } from "@/hooks/positions/wizard/useTokenSearch";
 
 interface UniswapV3PositionWizardProps {
@@ -28,9 +30,9 @@ export function UniswapV3PositionWizard({
   const [selectedChain, setSelectedChain] = useState<EvmChainSlug | null>(null);
   const [baseToken, setBaseToken] = useState<TokenSearchResult | null>(null);
   const [quoteToken, setQuoteToken] = useState<TokenSearchResult | null>(null);
+  const [selectedPool, setSelectedPool] = useState<PoolDiscoveryResult<'uniswapv3'> | null>(null);
 
   // Future state:
-  // const [selectedPool, setSelectedPool] = useState<Pool | null>(null);
   // const [tickLower, setTickLower] = useState<number | null>(null);
   // const [tickUpper, setTickUpper] = useState<number | null>(null);
   // const [liquidity, setLiquidity] = useState<bigint>(0n);
@@ -39,6 +41,7 @@ export function UniswapV3PositionWizard({
   const [isChainSelected, setIsChainSelected] = useState<boolean>(false);
   const [isTokenPairSelected, setIsTokenPairSelected] =
     useState<boolean>(false);
+  const [isPoolSelected, setIsPoolSelected] = useState<boolean>(false);
 
   // Handle closing wizard with confirmation if progress made
   const handleClose = useCallback(() => {
@@ -54,8 +57,10 @@ export function UniswapV3PositionWizard({
     setSelectedChain(null);
     setBaseToken(null);
     setQuoteToken(null);
+    setSelectedPool(null);
     setIsChainSelected(false);
     setIsTokenPairSelected(false);
+    setIsPoolSelected(false);
 
     onClose?.();
   }, [currentStep, onClose]);
@@ -71,12 +76,15 @@ export function UniswapV3PositionWizard({
     // Step 2 (Token Pair): Need both tokens selected
     if (currentStep === 2) return isTokenPairSelected;
 
+    // Step 3 (Pool Selection): Need pool selected
+    if (currentStep === 3) return isPoolSelected;
+
     // Future steps: Add more validation
-    // Step 3: isChainSelected && isTokenPairSelected && isPoolSelected
-    // etc.
+    // Step 4: Position configuration validation
+    // Step 5: Transaction ready validation
 
     return false;
-  }, [currentStep, isChainSelected, isTokenPairSelected]);
+  }, [currentStep, isChainSelected, isTokenPairSelected, isPoolSelected]);
 
   // Get step title
   const getStepTitle = (step: number): string => {
@@ -130,8 +138,24 @@ export function UniswapV3PositionWizard({
             Please select a chain first.
           </div>
         );
+      case 3:
+        return selectedChain && baseToken && quoteToken ? (
+          <PoolSelectionStep
+            chain={selectedChain}
+            baseToken={baseToken}
+            quoteToken={quoteToken}
+            selectedPool={selectedPool}
+            onPoolSelect={(pool) => {
+              setSelectedPool(pool);
+              setIsPoolSelected(true);
+            }}
+          />
+        ) : (
+          <div className="text-center text-slate-400">
+            Please select a token pair first.
+          </div>
+        );
       // Future steps:
-      // case 3: return <PoolSelectionStep ... />;
       // case 4: return <PositionConfigStep ... />;
       // case 5: return <OpenPositionStep ... />;
       default:
