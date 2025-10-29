@@ -71,7 +71,7 @@ export function PositionSizeConfig({
       try {
         const { token0Amount, token1Amount } = getTokenAmountsFromLiquidity(
           liquidity,
-          pool.state.sqrtPriceX96,
+          BigInt(pool.state.sqrtPriceX96),
           tickLower,
           tickUpper
         );
@@ -170,9 +170,10 @@ export function PositionSizeConfig({
     baseAmountBigInt,
     quoteAmountBigInt,
     positionCalculation.liquidity,
-    onLiquidityChange,
     liquidity,
     isInitialized,
+    // Note: onLiquidityChange is intentionally omitted from deps
+    // It's memoized in parent and including it causes infinite loops
   ]);
 
   // In matched mode, sync calculated amounts back to input fields

@@ -11,6 +11,7 @@ import { Eye } from "lucide-react";
 import { PositionRangeConfig } from "./position-range-config";
 import { PositionSizeConfig } from "./position-size-config";
 import type { TokenSearchResult } from "@/hooks/positions/wizard/useTokenSearch";
+import { usePositionAprCalculation } from "@/hooks/positions/wizard/usePositionAprCalculation";
 
 interface PositionConfigStepProps {
   chain: EvmChainSlug;
@@ -88,6 +89,17 @@ export function PositionConfigStep({
     }
   }, [pool, baseToken.address, quoteToken.address]);
 
+  // Calculate prospective APR
+  const aprCalculation = usePositionAprCalculation({
+    chain,
+    pool,
+    liquidity,
+    tickLower,
+    tickUpper,
+    baseToken: baseTokenErc20,
+    quoteToken: quoteTokenErc20,
+  });
+
   // Update parent whenever config changes
   useEffect(() => {
     onConfigChange({
@@ -142,7 +154,17 @@ export function PositionConfigStep({
         <div className="flex items-center justify-between text-sm">
           <span className="text-slate-300 font-medium">Prospective APR:</span>
           <div className="flex items-center gap-2">
-            <span className="text-white font-medium text-lg">—</span>
+            <span className={`font-medium text-lg ${
+              aprCalculation.hasValidData && aprCalculation.annualizedApr > 0
+                ? aprCalculation.isOutOfRange
+                  ? "text-yellow-400"
+                  : "text-green-400"
+                : "text-white"
+            }`}>
+              {aprCalculation.hasValidData && liquidity > 0n
+                ? `${aprCalculation.annualizedApr.toFixed(2)}%`
+                : "—"}
+            </span>
             <button
               className="p-1.5 text-slate-400 hover:text-slate-300 transition-colors cursor-pointer"
               title="View APR calculation details"
@@ -151,6 +173,11 @@ export function PositionConfigStep({
             </button>
           </div>
         </div>
+        {aprCalculation.isOutOfRange && liquidity > 0n && (
+          <div className="text-xs text-yellow-400">
+            ⚠ Position is currently out of range - no fees being collected
+          </div>
+        )}
       </div>
 
       {/* Position Range Configuration */}
@@ -164,6 +191,11 @@ export function PositionConfigStep({
         onTickLowerChange={setTickLower}
         onTickUpperChange={setTickUpper}
         onTickRangeChange={handleTickRangeChange}
+        aprValue={
+          aprCalculation.hasValidData && liquidity > 0n
+            ? aprCalculation.annualizedApr.toFixed(2)
+            : undefined
+        }
       />
 
       {/* Validation Info */}

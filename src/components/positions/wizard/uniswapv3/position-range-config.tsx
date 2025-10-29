@@ -28,6 +28,7 @@ interface PositionRangeConfigProps {
   onTickLowerChange: (_tick: number) => void;
   onTickUpperChange: (_tick: number) => void;
   onTickRangeChange: (_tickLower: number, _tickUpper: number) => void;
+  aprValue?: string; // Prospective APR percentage (e.g., "25.50")
 }
 
 export function PositionRangeConfig({
@@ -40,6 +41,7 @@ export function PositionRangeConfig({
   onTickLowerChange: _onTickLowerChange,
   onTickUpperChange: _onTickUpperChange,
   onTickRangeChange,
+  aprValue,
 }: PositionRangeConfigProps) {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
@@ -300,7 +302,7 @@ export function PositionRangeConfig({
               }}
               quoteTokenSymbol={quoteToken.symbol}
               quoteTokenDecimals={quoteToken.decimals}
-              aprValue="—" // TODO: Add APR calculation
+              aprValue={aprValue}
               aprLoading={false}
               sliderBounds={sliderBounds}
               onBoundsChange={setSliderBounds}
