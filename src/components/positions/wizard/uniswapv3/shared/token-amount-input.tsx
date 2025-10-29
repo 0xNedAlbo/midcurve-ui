@@ -1,14 +1,12 @@
 "use client";
 
 import { useCallback } from "react";
-import { useReadContract, useWatchContractEvent } from "wagmi";
 import { useAccount } from "wagmi";
-import { erc20Abi } from "viem";
-import { normalizeAddress } from "@midcurve/shared";
 import { formatCompactValue } from "@/lib/fraction-format";
 import type { EvmChainSlug } from "@/config/chains";
-import { CHAIN_METADATA } from "@/config/chains";
+import { getChainId } from "@/config/chains";
 import type { Erc20Token } from "@midcurve/shared";
+import { useTokenBalance } from "@/hooks/tokens/useTokenBalance";
 
 interface TokenAmountInputProps {
   token: Erc20Token;
@@ -58,78 +56,19 @@ export function TokenAmountInput({
 }: TokenAmountInputProps) {
   const { address: walletAddress, isConnected } = useAccount();
 
-  // Normalize addresses to ensure proper checksum format
-  const normalizedTokenAddress = token.config?.address
-    ? normalizeAddress(token.config.address)
-    : null;
-  const normalizedWalletAddress = walletAddress
-    ? normalizeAddress(walletAddress)
-    : null;
+  // Get chain ID from chain slug
+  const chainId = chain ? getChainId(chain) : 1; // Default to Ethereum if not provided
 
-  // Fetch wallet balance using balanceOf contract call
+  // Fetch balance via backend API (polls every 20 seconds)
   const {
-    data: balanceData,
+    balanceBigInt: balanceData,
     isLoading: balanceLoading,
-    refetch: refetchBalance,
-    error: balanceError,
-  } = useReadContract({
-    address: normalizedTokenAddress as `0x${string}`,
-    abi: erc20Abi,
-    functionName: "balanceOf",
-    args: [normalizedWalletAddress as `0x${string}`],
-    query: {
-      enabled:
-        isConnected &&
-        showMaxButton &&
-        !!normalizedWalletAddress &&
-        !!normalizedTokenAddress,
-    },
-    // Add chain config if provided
-    ...(chain && { chainId: getChainId(chain) }),
-  });
-
-  // Subscribe to Transfer events for this token to automatically update balance
-  useWatchContractEvent({
-    address: normalizedTokenAddress as `0x${string}`,
-    abi: erc20Abi,
-    eventName: "Transfer",
-    args: {
-      from: normalizedWalletAddress as `0x${string}`,
-    },
-    onLogs: (logs) => {
-      // Transfer FROM wallet - balance decreased
-      console.log("Transfer FROM wallet detected, refetching balance:", logs);
-      try {
-        refetchBalance?.();
-      } catch (error) {
-        console.error("Error refetching balance:", error);
-      }
-    },
-    enabled:
-      isConnected && !!normalizedWalletAddress && !!normalizedTokenAddress,
-    ...(chain && { chainId: getChainId(chain) }),
-  });
-
-  // Subscribe to Transfer events TO the wallet
-  useWatchContractEvent({
-    address: normalizedTokenAddress as `0x${string}`,
-    abi: erc20Abi,
-    eventName: "Transfer",
-    args: {
-      to: normalizedWalletAddress as `0x${string}`,
-    },
-    onLogs: (logs) => {
-      // Transfer TO wallet - balance increased
-      console.log("Transfer TO wallet detected, refetching balance:", logs);
-      try {
-        refetchBalance?.();
-      } catch (error) {
-        console.error("Error refetching balance:", error);
-      }
-    },
-    enabled:
-      isConnected && !!normalizedWalletAddress && !!normalizedTokenAddress,
-    ...(chain && { chainId: getChainId(chain) }),
+    isError: balanceError,
+  } = useTokenBalance({
+    walletAddress: walletAddress || null,
+    tokenAddress: token.config?.address || null,
+    chainId,
+    enabled: isConnected && showMaxButton,
   });
 
   const handleInputChange = useCallback(
@@ -222,10 +161,7 @@ export function TokenAmountInput({
       </div>
 
       {/* Balance display below input, right-aligned */}
-      {showMaxButton &&
-        isConnected &&
-        normalizedWalletAddress &&
-        normalizedTokenAddress && (
+      {showMaxButton && isConnected && walletAddress && token.config?.address && (
           <div className="text-right mt-1">
             <div className="text-xs text-slate-400">
               {balanceLoading
@@ -243,14 +179,4 @@ export function TokenAmountInput({
         )}
     </div>
   );
-}
-
-// Helper function to map chain slugs to chain IDs using centralized config
-function getChainId(chain: EvmChainSlug): number {
-  const chainMetadata = CHAIN_METADATA[chain];
-  if (!chainMetadata) {
-    console.error(`Unknown chain: ${chain}`);
-    return 1; // fallback to mainnet
-  }
-  return chainMetadata.chainId;
 }
