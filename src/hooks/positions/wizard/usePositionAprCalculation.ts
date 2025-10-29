@@ -111,14 +111,6 @@ export function usePositionAprCalculation({
       isNaN(tickLower) ||
       isNaN(tickUpper)
     ) {
-      console.log("[usePositionAprCalculation] Missing required data:", {
-        hasSqrtPriceX96: !!pool?.pool?.state?.sqrtPriceX96,
-        hasLiquidity: !!pool?.pool?.state?.liquidity,
-        hasCurrentTick: !!pool?.pool?.state?.currentTick,
-        liquidity: liquidity.toString(),
-        tickLower,
-        tickUpper,
-      });
       return emptyResult;
     }
 
@@ -142,10 +134,6 @@ export function usePositionAprCalculation({
 
       // Check if we have metrics data from backend
       if (!metrics || isMetricsLoading) {
-        console.log("[usePositionAprCalculation] Waiting for metrics data", {
-          hasMetrics: !!metrics,
-          isMetricsLoading,
-        });
         return {
           ...emptyResult,
           hasValidData: false,
@@ -166,19 +154,8 @@ export function usePositionAprCalculation({
       const dailyFeesToken0 = (volumeToken0 * feeTierBips) / FEE_DENOMINATOR;
       const dailyFeesToken1 = (volumeToken1 * feeTierBips) / FEE_DENOMINATOR;
 
-      console.log("[usePositionAprCalculation] Token volumes and fees:", {
-        volumeToken0: volumeToken0.toString(),
-        volumeToken1: volumeToken1.toString(),
-        dailyFeesToken0: dailyFeesToken0.toString(),
-        dailyFeesToken1: dailyFeesToken1.toString(),
-        feeTierBips: feeTierBips.toString(),
-        poolLiquidity: poolLiquidity.toString(),
-        userLiquidity: liquidity.toString(),
-      });
-
       // If no volume, return 0% APR
       if (volumeToken0 === 0n && volumeToken1 === 0n) {
-        console.log("[usePositionAprCalculation] No trading volume, returning 0% APR");
         return {
           ...emptyResult,
           hasValidData: true,
@@ -256,17 +233,6 @@ export function usePositionAprCalculation({
           : Number((userFeesQuoteValue * 10000n) / positionValueQuote) / 100;
 
       const annualizedApr = dailyApr * 365;
-
-      console.log("[usePositionAprCalculation] Calculated APR:", {
-        dailyApr,
-        annualizedApr,
-        userSharePercent,
-        userFeesQuoteValue: userFeesQuoteValue.toString(),
-        positionValueQuote: positionValueQuote.toString(),
-        volumeToken0: metrics.volumeToken0,
-        volumeToken1: metrics.volumeToken1,
-        isOutOfRange,
-      });
 
       return {
         dailyFeesToken0,
