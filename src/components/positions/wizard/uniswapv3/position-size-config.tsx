@@ -236,12 +236,6 @@ export function PositionSizeConfig({
 
     const inputLiquidity = positionCalculation.liquidity;
 
-    console.log("[PositionSizeConfig] Input values:", {
-      baseAmountBigInt: baseAmountBigInt.toString(),
-      quoteAmountBigInt: quoteAmountBigInt.toString(),
-      calculatedLiquidity: inputLiquidity.toString(),
-    });
-
     // Only emit change if the calculated liquidity differs from current prop
     // This prevents infinite loops when the component re-renders due to prop updates
     if (inputLiquidity !== liquidity) {
