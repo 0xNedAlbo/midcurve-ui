@@ -114,20 +114,16 @@ export function PositionRangeConfig({
     );
   }, [pool?.token0, baseToken]);
 
-  /**
-   * Convert tick to human-readable price
-   * @param tick The tick value to convert
-   * @returns Price as a number (quote tokens per base token)
-   * @example For WETH/USDC: tick -195340 → 3000.5 (meaning 3000.5 USDC per 1 WETH)
-   */
-  const convertTickToPriceSimple = useCallback(
+
+  // Helper function to convert tick to price (for RangeSlider)
+  const convertTickToPrice = useCallback(
     (tick: number): number => {
       if (
         !baseToken?.config?.address ||
         !quoteToken?.config?.address ||
         !pool ||
-        !pool.token0?.decimals ||
-        !pool.token1?.decimals
+        tick === undefined ||
+        isNaN(tick)
       ) {
         return 0;
       }
@@ -137,7 +133,6 @@ export function PositionRangeConfig({
           ? pool.token0.decimals
           : pool.token1.decimals;
 
-        // tickToPrice returns price in quote token decimals
         const priceBigInt = tickToPrice(
           tick,
           baseToken.config.address,
@@ -145,7 +140,7 @@ export function PositionRangeConfig({
           baseTokenDecimals
         );
 
-        // Convert to human readable number using quote token decimals
+        // Convert to number for RangeSlider
         const divisor = 10n ** BigInt(quoteToken.decimals);
         return Number(priceBigInt) / Number(divisor);
       } catch (error) {
@@ -156,13 +151,8 @@ export function PositionRangeConfig({
     [baseToken, quoteToken, pool, isToken0Base]
   );
 
-  /**
-   * Convert human-readable price to tick value
-   * @param price Price as a number (quote tokens per base token)
-   * @returns Tick value snapped to valid tick spacing
-   * @example For WETH/USDC: price 3000.5 → tick -195340 (3000.5 USDC per 1 WETH)
-   */
-  const convertPriceToTick = useCallback(
+  // Helper function to convert price to tick (for RangeSlider)
+  const convertPriceToTickValue = useCallback(
     (price: number): number => {
       if (
         !baseToken?.config?.address ||
@@ -205,44 +195,49 @@ export function PositionRangeConfig({
 
   // Display prices for header
   const displayPrices = useMemo(() => {
-    const lowerDisplay =
-      tickLower !== undefined && !isNaN(tickLower)
-        ? convertTickToPriceSimple(tickLower)
-        : 0;
-    const upperDisplay =
-      tickUpper !== undefined && !isNaN(tickUpper)
-        ? convertTickToPriceSimple(tickUpper)
-        : 0;
+    // Check for required data
+    if (
+      !baseToken?.config?.address ||
+      !quoteToken?.config?.address ||
+      !pool ||
+      tickLower === undefined ||
+      tickUpper === undefined ||
+      isNaN(tickLower) ||
+      isNaN(tickUpper)
+    ) {
+      return { lower: "—", upper: "—" };
+    }
 
-    // Convert to bigint for compact formatting
-    const lowerBigInt =
-      lowerDisplay > 0
-        ? BigInt(
-            Math.floor(
-              lowerDisplay * Number(10n ** BigInt(quoteToken.decimals))
-            )
-          )
-        : 0n;
-    const upperBigInt =
-      upperDisplay > 0
-        ? BigInt(
-            Math.floor(
-              upperDisplay * Number(10n ** BigInt(quoteToken.decimals))
-            )
-          )
-        : 0n;
+    try {
+      const baseTokenDecimals = isToken0Base
+        ? pool.token0.decimals
+        : pool.token1.decimals;
 
-    return {
-      lower:
-        lowerBigInt > 0n
-          ? formatCompactValue(lowerBigInt, quoteToken.decimals)
-          : "—",
-      upper:
-        upperBigInt > 0n
-          ? formatCompactValue(upperBigInt, quoteToken.decimals)
-          : "—",
-    };
-  }, [tickLower, tickUpper, convertTickToPriceSimple, quoteToken.decimals]);
+      // Use tickToPrice from @midcurve/shared (same as currentPrice useMemo)
+      const lowerPriceBigInt = tickToPrice(
+        tickLower,
+        baseToken.config.address,
+        quoteToken.config.address,
+        baseTokenDecimals
+      );
+
+      const upperPriceBigInt = tickToPrice(
+        tickUpper,
+        baseToken.config.address,
+        quoteToken.config.address,
+        baseTokenDecimals
+      );
+
+      // Format using quote token decimals
+      return {
+        lower: formatCompactValue(lowerPriceBigInt, quoteToken.decimals),
+        upper: formatCompactValue(upperPriceBigInt, quoteToken.decimals),
+      };
+    } catch (error) {
+      console.error("Error calculating display prices:", error);
+      return { lower: "—", upper: "—" };
+    }
+  }, [tickLower, tickUpper, baseToken, quoteToken, pool, isToken0Base]);
 
   // Check if current price is out of range
   const isOutOfRange = useMemo(() => {
@@ -296,11 +291,11 @@ export function PositionRangeConfig({
           <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
             <RangeSlider
               currentPrice={currentPrice}
-              lowerPrice={convertTickToPriceSimple(tickLower)}
-              upperPrice={convertTickToPriceSimple(tickUpper)}
+              lowerPrice={convertTickToPrice(tickLower)}
+              upperPrice={convertTickToPrice(tickUpper)}
               onRangeChange={(newLowerPrice, newUpperPrice) => {
-                const newLowerTick = convertPriceToTick(newLowerPrice);
-                const newUpperTick = convertPriceToTick(newUpperPrice);
+                const newLowerTick = convertPriceToTickValue(newLowerPrice);
+                const newUpperTick = convertPriceToTickValue(newUpperPrice);
                 onTickRangeChange(newLowerTick, newUpperTick);
               }}
               quoteTokenSymbol={quoteToken.symbol}

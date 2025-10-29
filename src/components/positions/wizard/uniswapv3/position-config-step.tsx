@@ -1,19 +1,21 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { Erc20Token } from "@midcurve/shared";
 import type { PoolDiscoveryResult } from "@midcurve/shared";
 import type { EvmChainSlug } from "@/config/chains";
 import { TickMath } from "@uniswap/v3-sdk";
-import { getTickSpacing } from "@midcurve/shared";
+import { getTickSpacing, compareAddresses } from "@midcurve/shared";
+import { Eye } from "lucide-react";
 
 import { PositionRangeConfig } from "./position-range-config";
 import { PositionSizeConfig } from "./position-size-config";
+import type { TokenSearchResult } from "@/hooks/positions/wizard/useTokenSearch";
 
 interface PositionConfigStepProps {
   chain: EvmChainSlug;
-  baseToken: Erc20Token;
-  quoteToken: Erc20Token;
+  baseToken: TokenSearchResult;
+  quoteToken: TokenSearchResult;
   pool: PoolDiscoveryResult<"uniswapv3">;
   tickLower: number | null;
   tickUpper: number | null;
@@ -64,6 +66,28 @@ export function PositionConfigStep({
 
   const [liquidity, setLiquidity] = useState<bigint>(initialLiquidity);
 
+  /**
+   * Create proper Erc20Token objects from pool data
+   * The pool contains full token information with addresses in config
+   */
+  const { baseTokenErc20, quoteTokenErc20 } = useMemo(() => {
+    // Determine which pool token is base and which is quote
+    const isToken0Base =
+      compareAddresses(pool.pool.token0.config.address, baseToken.address) === 0;
+
+    if (isToken0Base) {
+      return {
+        baseTokenErc20: pool.pool.token0 as Erc20Token,
+        quoteTokenErc20: pool.pool.token1 as Erc20Token,
+      };
+    } else {
+      return {
+        baseTokenErc20: pool.pool.token1 as Erc20Token,
+        quoteTokenErc20: pool.pool.token0 as Erc20Token,
+      };
+    }
+  }, [pool, baseToken.address, quoteToken.address]);
+
   // Update parent whenever config changes
   useEffect(() => {
     onConfigChange({
@@ -100,35 +124,47 @@ export function PositionConfigStep({
 
   return (
     <div className="space-y-6">
-      {/* Position Range Configuration */}
-      <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
-        <PositionRangeConfig
-          pool={pool.pool}
-          baseToken={baseToken}
-          quoteToken={quoteToken}
-          tickLower={tickLower}
-          tickUpper={tickUpper}
-          liquidity={liquidity}
-          onTickLowerChange={setTickLower}
-          onTickUpperChange={setTickUpper}
-          onTickRangeChange={handleTickRangeChange}
-        />
+      {/* Position Size Configuration */}
+      <PositionSizeConfig
+        pool={pool.pool}
+        baseToken={baseTokenErc20}
+        quoteToken={quoteTokenErc20}
+        tickLower={tickLower}
+        tickUpper={tickUpper}
+        liquidity={liquidity}
+        onLiquidityChange={handleLiquidityChange}
+        chain={chain}
+        label="Position Size:"
+      />
+
+      {/* Prospective APR */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-slate-300 font-medium">Prospective APR:</span>
+          <div className="flex items-center gap-2">
+            <span className="text-white font-medium text-lg">—</span>
+            <button
+              className="p-1.5 text-slate-400 hover:text-slate-300 transition-colors cursor-pointer"
+              title="View APR calculation details"
+            >
+              <Eye className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Position Size Configuration */}
-      <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-6">
-        <PositionSizeConfig
-          pool={pool.pool}
-          baseToken={baseToken}
-          quoteToken={quoteToken}
-          tickLower={tickLower}
-          tickUpper={tickUpper}
-          liquidity={liquidity}
-          onLiquidityChange={handleLiquidityChange}
-          chain={chain}
-          label="Position Size:"
-        />
-      </div>
+      {/* Position Range Configuration */}
+      <PositionRangeConfig
+        pool={pool.pool}
+        baseToken={baseTokenErc20}
+        quoteToken={quoteTokenErc20}
+        tickLower={tickLower}
+        tickUpper={tickUpper}
+        liquidity={liquidity}
+        onTickLowerChange={setTickLower}
+        onTickUpperChange={setTickUpper}
+        onTickRangeChange={handleTickRangeChange}
+      />
 
       {/* Validation Info */}
       {liquidity === 0n && (

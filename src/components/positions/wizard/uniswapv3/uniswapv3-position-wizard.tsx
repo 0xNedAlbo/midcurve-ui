@@ -102,7 +102,7 @@ export function UniswapV3PositionWizard({
       case 3:
         return "Select Pool & Fee Tier";
       case 4:
-        return "Configure Position";
+        return "Configure your position parameters and analyze the risk profile.";
       case 5:
         return "Open Position";
       default:

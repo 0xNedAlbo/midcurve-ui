@@ -59,7 +59,7 @@ export function TokenAmountInput({
   const { address: walletAddress, isConnected } = useAccount();
 
   // Normalize addresses to ensure proper checksum format
-  const normalizedTokenAddress = token.config.address
+  const normalizedTokenAddress = token.config?.address
     ? normalizeAddress(token.config.address)
     : null;
   const normalizedWalletAddress = walletAddress

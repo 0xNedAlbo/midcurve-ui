@@ -74,15 +74,22 @@ export function usePositionSizeCalculation({
     let liquidity: bigint = 0n;
     if (pool.state.sqrtPriceX96 && (baseAmount > 0n || quoteAmount > 0n)) {
       try {
+        // Ensure all parameters are the correct types
+        const baseAmountBigInt = BigInt(baseAmount);
+        const quoteAmountBigInt = BigInt(quoteAmount);
+        const baseDecimalsNum = Number(baseToken.decimals);
+        const quoteDecimalsNum = Number(quoteToken.decimals);
+        const sqrtPriceX96BigInt = BigInt(pool.state.sqrtPriceX96);
+
         liquidity = getLiquidityFromInvestmentAmounts_withTick(
-          baseAmount,
-          baseToken.decimals,
-          quoteAmount,
-          quoteToken.decimals,
+          baseAmountBigInt,
+          baseDecimalsNum,
+          quoteAmountBigInt,
+          quoteDecimalsNum,
           isQuoteToken0,
           tickUpper,
           tickLower,
-          pool.state.sqrtPriceX96
+          sqrtPriceX96BigInt
         );
       } catch (error) {
         console.error('Error calculating liquidity:', error);
@@ -95,11 +102,17 @@ export function usePositionSizeCalculation({
     let token1Amount: bigint = 0n;
     if (liquidity > 0n && pool.state.sqrtPriceX96) {
       try {
+        // Ensure all parameters are the correct types
+        const liquidityBigInt = BigInt(liquidity);
+        const sqrtPriceX96BigInt = BigInt(pool.state.sqrtPriceX96);
+        const tickLowerNum = Number(tickLower);
+        const tickUpperNum = Number(tickUpper);
+
         const tokenAmounts = getTokenAmountsFromLiquidity(
-          liquidity,
-          pool.state.sqrtPriceX96,
-          tickLower,
-          tickUpper
+          liquidityBigInt,
+          sqrtPriceX96BigInt,
+          tickLowerNum,
+          tickUpperNum
         );
         token0Amount = tokenAmounts.token0Amount;
         token1Amount = tokenAmounts.token1Amount;
@@ -117,7 +130,7 @@ export function usePositionSizeCalculation({
     if (baseTokenAmount > 0n && pool.state.sqrtPriceX96) {
       try {
         // Convert base amount to quote units using current price
-        const sqrtPriceX96 = pool.state.sqrtPriceX96;
+        const sqrtPriceX96 = BigInt(pool.state.sqrtPriceX96);
 
         if (isQuoteToken0) {
           // quote=token0, base=token1 -> price (quote/base) = Q192 / S^2

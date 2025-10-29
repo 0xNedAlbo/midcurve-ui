@@ -123,7 +123,13 @@ export function PositionSizeConfig({
     setBaseAmount(value);
     setBaseAmountBigInt(valueBigInt);
     setLastEditedField("base");
-  }, []);
+
+    // In base mode, ensure quote stays at 0 (single-token investment)
+    if (mode === "base") {
+      setQuoteAmount("0");
+      setQuoteAmountBigInt(0n);
+    }
+  }, [mode]);
 
   // Handle quote token amount change
   const handleQuoteAmountChange = useCallback(
@@ -131,8 +137,14 @@ export function PositionSizeConfig({
       setQuoteAmount(value);
       setQuoteAmountBigInt(valueBigInt);
       setLastEditedField("quote");
+
+      // In quote mode, ensure base stays at 0 (single-token investment)
+      if (mode === "quote") {
+        setBaseAmount("0");
+        setBaseAmountBigInt(0n);
+      }
     },
-    []
+    [mode]
   );
 
   // Calculate liquidity from user input and emit to parent
@@ -220,8 +232,18 @@ export function PositionSizeConfig({
   const handleModeChange = useCallback((newMode: InputMode) => {
     setMode(newMode);
 
-    // Don't clear amounts - let the user keep their inputs
-    // The liquidity calculation will handle single-token inputs automatically
+    // In single-token modes, clear the other token to 0
+    // This ensures the calculation treats it as a single-token investment
+    if (newMode === "base") {
+      // Base mode: user enters base amount, quote should be 0
+      setQuoteAmount("0");
+      setQuoteAmountBigInt(0n);
+    } else if (newMode === "quote") {
+      // Quote mode: user enters quote amount, base should be 0
+      setBaseAmount("0");
+      setBaseAmountBigInt(0n);
+    }
+    // For matched and independent modes, keep existing amounts
   }, []);
 
   // Refresh pool data handler
