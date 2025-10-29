@@ -6,7 +6,7 @@ import { useAccount } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { TokenAmountInput } from "./shared/token-amount-input";
 import type { UniswapV3Pool, Erc20Token } from "@midcurve/shared";
-import { getTokenAmountsFromLiquidity } from "@midcurve/shared";
+import { getTokenAmountsFromLiquidity, getLiquidityFromInvestmentAmounts_withTick, compareAddresses } from "@midcurve/shared";
 import { formatCompactValue } from "@/lib/fraction-format";
 import type { EvmChainSlug } from "@/config/chains";
 import { usePositionSizeCalculation } from "@/hooks/positions/wizard/usePositionSizeCalculation";
@@ -50,9 +50,6 @@ export function PositionSizeConfig({
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [lastEditedField, setLastEditedField] = useState<
-    "base" | "quote" | null
-  >(null);
 
   // Use the position size calculation hook
   const positionCalculation = usePositionSizeCalculation({
@@ -122,29 +119,113 @@ export function PositionSizeConfig({
   const handleBaseAmountChange = useCallback((value: string, valueBigInt: bigint) => {
     setBaseAmount(value);
     setBaseAmountBigInt(valueBigInt);
-    setLastEditedField("base");
 
     // In base mode, ensure quote stays at 0 (single-token investment)
     if (mode === "base") {
       setQuoteAmount("0");
       setQuoteAmountBigInt(0n);
     }
-  }, [mode]);
+
+    // In matched mode, calculate quote amount synchronously
+    if (mode === "matched" && valueBigInt > 0n && pool.state.sqrtPriceX96) {
+      try {
+        const isQuoteToken0 = compareAddresses(
+          quoteToken.config.address,
+          baseToken.config.address
+        ) < 0;
+
+        // Calculate liquidity from base amount (quote = 0 for this calculation)
+        const tempLiquidity = getLiquidityFromInvestmentAmounts_withTick(
+          valueBigInt,
+          Number(baseToken.decimals),
+          0n, // quote amount = 0 for single-token liquidity calc
+          Number(quoteToken.decimals),
+          isQuoteToken0,
+          tickUpper,
+          tickLower,
+          BigInt(pool.state.sqrtPriceX96)
+        );
+
+        // Get both token amounts from the calculated liquidity
+        const { token0Amount, token1Amount } = getTokenAmountsFromLiquidity(
+          tempLiquidity,
+          BigInt(pool.state.sqrtPriceX96),
+          tickLower,
+          tickUpper
+        );
+
+        // Extract quote amount based on token ordering
+        const calculatedQuoteAmount = isQuoteToken0 ? token0Amount : token1Amount;
+
+        // Update quote field synchronously
+        const quoteAmountString = formatCompactValue(
+          calculatedQuoteAmount,
+          quoteToken.decimals
+        );
+        setQuoteAmount(quoteAmountString);
+        setQuoteAmountBigInt(calculatedQuoteAmount);
+      } catch (error) {
+        console.error('Error calculating quote amount in matched mode:', error);
+      }
+    }
+  }, [mode, pool.state.sqrtPriceX96, baseToken, quoteToken, tickLower, tickUpper]);
 
   // Handle quote token amount change
   const handleQuoteAmountChange = useCallback(
     (value: string, valueBigInt: bigint) => {
       setQuoteAmount(value);
       setQuoteAmountBigInt(valueBigInt);
-      setLastEditedField("quote");
 
       // In quote mode, ensure base stays at 0 (single-token investment)
       if (mode === "quote") {
         setBaseAmount("0");
         setBaseAmountBigInt(0n);
       }
+
+      // In matched mode, calculate base amount synchronously
+      if (mode === "matched" && valueBigInt > 0n && pool.state.sqrtPriceX96) {
+        try {
+          const isQuoteToken0 = compareAddresses(
+            quoteToken.config.address,
+            baseToken.config.address
+          ) < 0;
+
+          // Calculate liquidity from quote amount (base = 0 for this calculation)
+          const tempLiquidity = getLiquidityFromInvestmentAmounts_withTick(
+            0n, // base amount = 0 for single-token liquidity calc
+            Number(baseToken.decimals),
+            valueBigInt,
+            Number(quoteToken.decimals),
+            isQuoteToken0,
+            tickUpper,
+            tickLower,
+            BigInt(pool.state.sqrtPriceX96)
+          );
+
+          // Get both token amounts from the calculated liquidity
+          const { token0Amount, token1Amount } = getTokenAmountsFromLiquidity(
+            tempLiquidity,
+            BigInt(pool.state.sqrtPriceX96),
+            tickLower,
+            tickUpper
+          );
+
+          // Extract base amount based on token ordering
+          const calculatedBaseAmount = isQuoteToken0 ? token1Amount : token0Amount;
+
+          // Update base field synchronously
+          const baseAmountString = formatCompactValue(
+            calculatedBaseAmount,
+            baseToken.decimals
+          );
+          setBaseAmount(baseAmountString);
+          setBaseAmountBigInt(calculatedBaseAmount);
+        } catch (error) {
+          console.error('Error calculating base amount in matched mode:', error);
+        }
+      }
     },
-    [mode]
+    [mode, pool.state.sqrtPriceX96, baseToken, quoteToken, tickLower, tickUpper]
   );
 
   // Calculate liquidity from user input and emit to parent
@@ -176,58 +257,9 @@ export function PositionSizeConfig({
     // It's memoized in parent and including it causes infinite loops
   ]);
 
-  // In matched mode, sync calculated amounts back to input fields
-  useEffect(() => {
-    if (!isInitialized || mode !== "matched") return;
-    if (positionCalculation.liquidity === 0n) return;
-    if (!lastEditedField) return; // Only sync when user has edited a field
-
-    // Get the calculated token amounts from the hook
-    const calculatedBaseAmount = positionCalculation.isQuoteToken0
-      ? positionCalculation.token1Amount
-      : positionCalculation.token0Amount;
-    const calculatedQuoteAmount = positionCalculation.isQuoteToken0
-      ? positionCalculation.token0Amount
-      : positionCalculation.token1Amount;
-
-    // Update quote field if user edited base (quote should reflect calculation)
-    if (
-      lastEditedField === "base" &&
-      calculatedQuoteAmount !== quoteAmountBigInt
-    ) {
-      const quoteAmountString = formatCompactValue(
-        calculatedQuoteAmount,
-        quoteToken.decimals
-      );
-      setQuoteAmount(quoteAmountString);
-      setQuoteAmountBigInt(calculatedQuoteAmount);
-    }
-
-    // Update base field if user edited quote (base should reflect calculation)
-    if (
-      lastEditedField === "quote" &&
-      calculatedBaseAmount !== baseAmountBigInt
-    ) {
-      const baseAmountString = formatCompactValue(
-        calculatedBaseAmount,
-        baseToken.decimals
-      );
-      setBaseAmount(baseAmountString);
-      setBaseAmountBigInt(calculatedBaseAmount);
-    }
-  }, [
-    mode,
-    isInitialized,
-    positionCalculation.liquidity,
-    positionCalculation.token0Amount,
-    positionCalculation.token1Amount,
-    positionCalculation.isQuoteToken0,
-    baseToken.decimals,
-    quoteToken.decimals,
-    baseAmountBigInt,
-    quoteAmountBigInt,
-    lastEditedField,
-  ]);
+  // Note: Matched mode synchronization now happens directly in handleBaseAmountChange
+  // and handleQuoteAmountChange to prevent cascading useEffect re-renders.
+  // This eliminates the "counting up" visual effect where values gradually increase.
 
   // Mode change handler
   const handleModeChange = useCallback((newMode: InputMode) => {
