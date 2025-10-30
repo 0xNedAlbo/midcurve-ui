@@ -136,6 +136,7 @@ export function TokenAmountInput({
           {/* Token symbol display */}
           <div className="flex items-center gap-1">
             {token.logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={token.logoUrl}
                 alt={token.symbol}

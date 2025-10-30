@@ -241,6 +241,7 @@ export function PositionSizeConfig({
     if (inputLiquidity !== liquidity) {
       onLiquidityChange(inputLiquidity);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     baseAmountBigInt,
     quoteAmountBigInt,

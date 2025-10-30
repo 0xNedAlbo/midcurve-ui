@@ -35,7 +35,7 @@ export interface PositionConfig {
 export function PositionConfigStep({
   chain,
   baseToken,
-  quoteToken,
+  quoteToken: _quoteToken,
   pool: initialPool,
   tickLower: initialTickLower,
   tickUpper: initialTickUpper,
@@ -119,7 +119,7 @@ export function PositionConfigStep({
         quoteTokenErc20: pool.pool.token0 as Erc20Token,
       };
     }
-  }, [pool, baseToken.address, quoteToken.address]);
+  }, [pool, baseToken.address]);
 
   // Calculate prospective APR
   const aprCalculation = usePositionAprCalculation({

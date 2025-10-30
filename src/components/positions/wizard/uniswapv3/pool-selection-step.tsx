@@ -157,6 +157,7 @@ export function PoolSelectionStep(props: PoolSelectionStepProps) {
                       {/* Token 0 Logo (z-10) */}
                       <div className="relative z-10">
                         {token0.logoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={token0.logoUrl}
                             alt={token0.symbol}
@@ -171,6 +172,7 @@ export function PoolSelectionStep(props: PoolSelectionStepProps) {
                       {/* Token 1 Logo (z-0, negative margin for overlap) */}
                       <div className="relative -ml-3 z-0">
                         {token1.logoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={token1.logoUrl}
                             alt={token1.symbol}

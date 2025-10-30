@@ -76,7 +76,7 @@ export function usePositionAprCalculation({
   tickLower,
   tickUpper,
   baseToken,
-  quoteToken,
+  quoteToken: _quoteToken,
 }: UsePositionAprCalculationParams): AprCalculationResult {
   // Fetch fresh metrics from backend API
   const { metrics, isLoading: isMetricsLoading } = usePoolMetrics({
@@ -251,5 +251,5 @@ export function usePositionAprCalculation({
       console.error("[usePositionAprCalculation] Error calculating APR:", error);
       return emptyResult;
     }
-  }, [pool, liquidity, tickLower, tickUpper, baseToken, quoteToken, metrics, isMetricsLoading]);
+  }, [pool, liquidity, tickLower, tickUpper, baseToken.config.address, metrics, isMetricsLoading]);
 }
