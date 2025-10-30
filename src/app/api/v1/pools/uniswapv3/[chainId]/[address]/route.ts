@@ -1,7 +1,7 @@
 /**
  * Uniswap V3 Pool Lookup Endpoint
  *
- * GET /api/v1/pools/uniswapv3/:address - Get pool by address with fresh state
+ * GET /api/v1/pools/uniswapv3/:chainId/:address - Get pool by address with fresh state
  *
  * Authentication: Required (session or API key)
  */
@@ -31,21 +31,21 @@ const poolService = new UniswapV3PoolService();
 const subgraphClient = UniswapV3SubgraphClient.getInstance();
 
 /**
- * GET /api/v1/pools/uniswapv3/:address
+ * GET /api/v1/pools/uniswapv3/:chainId/:address
  *
  * Retrieves a Uniswap V3 pool by its contract address with fresh on-chain state.
  * Always returns current price, liquidity, and tick data.
  *
  * Path params:
+ * - chainId (required): EVM chain ID (e.g., 1, 42161, 8453)
  * - address (required): Pool contract address (0x...)
  *
  * Query params:
- * - chainId (required): EVM chain ID (e.g., 1, 42161, 8453)
  * - metrics (optional): Include subgraph metrics (TVL, volume, fees). Defaults to false.
  * - fees (optional): Include fee data for APR calculations (24h volumes, token prices). Defaults to false.
  *
  * Example:
- * GET /api/v1/pools/uniswapv3/0xC31E54c7a869B9FcBEcc14363CF510d1c41fa443?chainId=42161&metrics=true&fees=true
+ * GET /api/v1/pools/uniswapv3/42161/0xC31E54c7a869B9FcBEcc14363CF510d1c41fa443?metrics=true&fees=true
  *
  * Returns:
  * - Pool data with fresh on-chain state (price, liquidity, tick)
@@ -54,15 +54,16 @@ const subgraphClient = UniswapV3SubgraphClient.getInstance();
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ address: string }> }
+  { params }: { params: Promise<{ chainId: string; address: string }> }
 ): Promise<Response> {
   return withAuth(request, async (_user, requestId) => {
     const startTime = Date.now();
 
     try {
       // 1. Await and parse path params (Next.js 15 requires Promise)
-      const { address } = await params;
+      const { chainId, address } = await params;
       const paramsResult = GetUniswapV3PoolParamsSchema.safeParse({
+        chainId,
         address,
       });
 
@@ -71,7 +72,7 @@ export async function GET(
 
         const errorResponse = createErrorResponse(
           ApiErrorCode.VALIDATION_ERROR,
-          'Invalid pool address format',
+          'Invalid path parameters',
           paramsResult.error.errors
         );
 
@@ -82,8 +83,7 @@ export async function GET(
         });
       }
 
-      // Address is already available from line 62
-      // const { address } = paramsResult.data; // Not needed - already destructured above
+      const { chainId: validatedChainId, address: validatedAddress } = paramsResult.data;
 
       // 2. Parse and validate query params
       const searchParams = Object.fromEntries(request.nextUrl.searchParams.entries());
@@ -105,7 +105,7 @@ export async function GET(
         });
       }
 
-      const { chainId, metrics, fees } = queryResult.data;
+      const { metrics, fees } = queryResult.data;
 
       // Log request (no dedicated request log method, done inline)
 
@@ -114,8 +114,8 @@ export async function GET(
       let pool;
       try {
         pool = await poolService.discover({
-          poolAddress: address,
-          chainId,
+          poolAddress: validatedAddress,
+          chainId: validatedChainId,
         });
       } catch (error) {
         // Handle specific error cases
@@ -127,7 +127,7 @@ export async function GET(
           ) {
             const errorResponse = createErrorResponse(
               ApiErrorCode.NOT_FOUND,
-              `Pool not found at address ${address} on chain ${chainId}`
+              `Pool not found at address ${validatedAddress} on chain ${validatedChainId}`
             );
 
             apiLog.requestEnd(apiLogger, requestId, 404, Date.now() - startTime);
@@ -175,7 +175,7 @@ export async function GET(
       let metricsData;
       if (metrics) {
         try {
-          const poolMetrics = await subgraphClient.getPoolMetrics(chainId, address);
+          const poolMetrics = await subgraphClient.getPoolMetrics(validatedChainId, validatedAddress);
           metricsData = {
             tvlUSD: poolMetrics.tvlUSD,
             volumeUSD: poolMetrics.volumeUSD,
@@ -184,7 +184,7 @@ export async function GET(
         } catch (error) {
           // Graceful degradation: log warning but don't fail request
           apiLogger.warn(
-            { requestId, chainId, address, error },
+            { requestId, chainId: validatedChainId, address: validatedAddress, error },
             'Failed to fetch subgraph metrics, proceeding without metrics'
           );
           // metricsData remains undefined
@@ -195,7 +195,7 @@ export async function GET(
       let feeData;
       if (fees) {
         try {
-          const poolFeeData = await subgraphClient.getPoolFeeData(chainId, address);
+          const poolFeeData = await subgraphClient.getPoolFeeData(validatedChainId, validatedAddress);
           feeData = {
             token0DailyVolume: poolFeeData.token0.dailyVolume,
             token1DailyVolume: poolFeeData.token1.dailyVolume,
@@ -207,7 +207,7 @@ export async function GET(
         } catch (error) {
           // Graceful degradation: log warning but don't fail request
           apiLogger.warn(
-            { requestId, chainId, address, error },
+            { requestId, chainId: validatedChainId, address: validatedAddress, error },
             'Failed to fetch fee data, proceeding without fees'
           );
           // feeData remains undefined
@@ -229,7 +229,7 @@ export async function GET(
       const response = createSuccessResponse(responseData, {
         poolId: pool.id,
         address: pool.config.address,
-        chainId,
+        chainId: validatedChainId,
         hasMetrics: !!metricsData,
         hasFeeData: !!feeData,
       });
@@ -241,7 +241,7 @@ export async function GET(
       // Unhandled error
       apiLog.methodError(
         apiLogger,
-        'GET /api/v1/pools/uniswapv3/:address',
+        'GET /api/v1/pools/uniswapv3/:chainId/:address',
         error,
         { requestId }
       );

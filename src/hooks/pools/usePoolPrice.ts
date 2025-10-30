@@ -120,7 +120,7 @@ export function usePoolPrice({
       }
 
       const response = await fetch(
-        `/api/v1/pools/uniswapv3/${poolAddress}/pool-price?chainId=${chainId}`
+        `/api/v1/pools/uniswapv3/${chainId}/${poolAddress}/pool-price`
       );
 
       if (!response.ok) {

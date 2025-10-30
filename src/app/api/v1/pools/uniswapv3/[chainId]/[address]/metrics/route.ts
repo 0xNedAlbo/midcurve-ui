@@ -1,7 +1,7 @@
 /**
  * Uniswap V3 Pool Metrics Endpoint
  *
- * GET /api/v1/pools/uniswapv3/:address/metrics?chainId=X - Get fresh pool metrics
+ * GET /api/v1/pools/uniswapv3/:chainId/:address/metrics - Get fresh pool metrics
  *
  * Authentication: Required (session or API key)
  *
@@ -32,27 +32,24 @@ const subgraphClient = UniswapV3SubgraphClient.getInstance();
 
 // Validation schema for path parameters
 const PoolMetricsParamsSchema = z.object({
+  chainId: z
+    .string()
+    .regex(/^\d+$/, 'chainId must be a positive integer')
+    .transform((val) => parseInt(val, 10)),
   address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address'),
 });
 
-// Validation schema for query parameters
-const PoolMetricsQuerySchema = z.object({
-  chainId: z.string().transform((val) => parseInt(val, 10)),
-});
-
 /**
- * GET /api/v1/pools/uniswapv3/:address/metrics?chainId=X
+ * GET /api/v1/pools/uniswapv3/:chainId/:address/metrics
  *
  * Fetches fresh pool metrics from the Uniswap V3 subgraph for APR calculations.
  *
  * Path params:
+ * - chainId (required): EVM chain ID (e.g., 1, 42161, 8453)
  * - address (required): Pool contract address (0x...)
  *
- * Query params:
- * - chainId (required): EVM chain ID (e.g., 1, 42161, 8453)
- *
  * Example:
- * GET /api/v1/pools/uniswapv3/0xC31E54c7a869B9FcBEcc14363CF510d1c41fa443/metrics?chainId=42161
+ * GET /api/v1/pools/uniswapv3/42161/0xC31E54c7a869B9FcBEcc14363CF510d1c41fa443/metrics
  *
  * Returns:
  * - Pool metrics with token-specific volume data for APR calculations
@@ -61,15 +58,16 @@ const PoolMetricsQuerySchema = z.object({
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ address: string }> }
+  { params }: { params: Promise<{ chainId: string; address: string }> }
 ): Promise<Response> {
   return withAuth(request, async (_user, requestId) => {
     const startTime = Date.now();
 
     try {
       // 1. Await and parse path params (Next.js 15 requires Promise)
-      const { address } = await params;
+      const { chainId, address } = await params;
       const paramsResult = PoolMetricsParamsSchema.safeParse({
+        chainId,
         address,
       });
 
@@ -89,34 +87,12 @@ export async function GET(
         });
       }
 
-      const { address: validatedAddress } = paramsResult.data;
-
-      // 2. Parse and validate query params
-      const searchParams = Object.fromEntries(request.nextUrl.searchParams.entries());
-      const queryResult = PoolMetricsQuerySchema.safeParse(searchParams);
-
-      if (!queryResult.success) {
-        apiLog.validationError(apiLogger, requestId, queryResult.error.errors);
-
-        const errorResponse = createErrorResponse(
-          ApiErrorCode.VALIDATION_ERROR,
-          'Invalid query parameters',
-          queryResult.error.errors
-        );
-
-        apiLog.requestEnd(apiLogger, requestId, 400, Date.now() - startTime);
-
-        return NextResponse.json(errorResponse, {
-          status: ErrorCodeToHttpStatus[ApiErrorCode.VALIDATION_ERROR],
-        });
-      }
-
-      const { chainId } = queryResult.data;
+      const { chainId: validatedChainId, address: validatedAddress } = paramsResult.data;
 
       // Normalize address for database lookup (EIP-55 checksum)
       const normalizedAddress = normalizeAddress(validatedAddress);
 
-      // 3. Check if pool exists in database (must be discovered first)
+      // 2. Check if pool exists in database (must be discovered first)
       const pool = await prisma.pool.findFirst({
         where: {
           protocol: 'uniswapv3',
@@ -130,7 +106,7 @@ export async function GET(
             {
               config: {
                 path: ['chainId'],
-                equals: chainId,
+                equals: validatedChainId,
               },
             },
           ],
@@ -140,7 +116,7 @@ export async function GET(
 
       if (!pool) {
         apiLogger.warn(
-          { requestId, chainId, poolAddress: validatedAddress },
+          { requestId, chainId: validatedChainId, poolAddress: validatedAddress },
           'Pool not found in database - must discover first'
         );
 
@@ -156,14 +132,14 @@ export async function GET(
         });
       }
 
-      // 4. Fetch fresh metrics from subgraph
+      // 3. Fetch fresh metrics from subgraph
       let feeData;
       try {
-        feeData = await subgraphClient.getPoolFeeData(chainId, normalizedAddress);
+        feeData = await subgraphClient.getPoolFeeData(validatedChainId, normalizedAddress);
       } catch (error) {
         // Subgraph unavailable or pool not indexed
         apiLogger.error(
-          { requestId, chainId, poolAddress: validatedAddress, error },
+          { requestId, chainId: validatedChainId, poolAddress: validatedAddress, error },
           'Failed to fetch pool metrics from subgraph'
         );
 
@@ -180,9 +156,9 @@ export async function GET(
         });
       }
 
-      // 5. Build response
+      // 4. Build response
       const metricsData: PoolMetricsData = {
-        chainId,
+        chainId: validatedChainId,
         poolAddress: normalizedAddress,
         tvlUSD: feeData.tvlUSD,
         volumeUSD: feeData.volumeUSD,
@@ -196,7 +172,7 @@ export async function GET(
 
       const response = createSuccessResponse(metricsData, {
         poolId: pool.id,
-        chainId,
+        chainId: validatedChainId,
         poolAddress: normalizedAddress,
       });
 
@@ -207,7 +183,7 @@ export async function GET(
       // Unhandled error
       apiLog.methodError(
         apiLogger,
-        'GET /api/v1/pools/uniswapv3/:address/metrics',
+        'GET /api/v1/pools/uniswapv3/:chainId/:address/metrics',
         error,
         { requestId }
       );

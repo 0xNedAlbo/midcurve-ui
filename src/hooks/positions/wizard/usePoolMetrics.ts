@@ -98,12 +98,8 @@ export function usePoolMetrics(
       throw new Error('Pool address is required');
     }
 
-    const params = new URLSearchParams({
-      chainId: chainId.toString(),
-    });
-
     const response = await fetch(
-      `/api/v1/pools/uniswapv3/${poolAddress}/metrics?${params.toString()}`
+      `/api/v1/pools/uniswapv3/${chainId}/${poolAddress}/metrics`
     );
 
     if (!response.ok) {
