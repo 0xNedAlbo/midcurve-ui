@@ -12,6 +12,7 @@ import { PositionRangeConfig } from "./position-range-config";
 import { PositionSizeConfig } from "./position-size-config";
 import type { TokenSearchResult } from "@/hooks/positions/wizard/useTokenSearch";
 import { usePositionAprCalculation } from "@/hooks/positions/wizard/usePositionAprCalculation";
+import { usePoolPrice } from "@/hooks/pools/usePoolPrice";
 
 interface PositionConfigStepProps {
   chain: EvmChainSlug;
@@ -35,13 +36,16 @@ export function PositionConfigStep({
   chain,
   baseToken,
   quoteToken,
-  pool,
+  pool: initialPool,
   tickLower: initialTickLower,
   tickUpper: initialTickUpper,
   liquidity: initialLiquidity,
   onConfigChange,
   onValidationChange,
 }: PositionConfigStepProps) {
+  // Local state for pool (allows updating with fresh price data)
+  const [pool, setPool] = useState<PoolDiscoveryResult<"uniswapv3">>(initialPool);
+
   // Local state for position configuration
   const [tickLower, setTickLower] = useState<number>(() => {
     if (initialTickLower !== null && !isNaN(initialTickLower)) {
@@ -66,6 +70,34 @@ export function PositionConfigStep({
   });
 
   const [liquidity, setLiquidity] = useState<bigint>(initialLiquidity);
+
+  // Hook for fetching current pool price (for refresh button)
+  const {
+    sqrtPriceX96: latestSqrtPriceX96,
+    currentTick: latestCurrentTick,
+    refetch: refetchPoolPrice,
+  } = usePoolPrice({
+    chainId: pool.pool.config.chainId.toString(),
+    poolAddress: pool.pool.config.address,
+    enabled: true,
+  });
+
+  // Update pool state when fresh price data arrives
+  useEffect(() => {
+    if (latestSqrtPriceX96 && latestCurrentTick !== undefined) {
+      setPool((prevPool) => ({
+        ...prevPool,
+        pool: {
+          ...prevPool.pool,
+          state: {
+            ...prevPool.pool.state,
+            sqrtPriceX96: BigInt(latestSqrtPriceX96),
+            currentTick: latestCurrentTick,
+          },
+        },
+      }));
+    }
+  }, [latestSqrtPriceX96, latestCurrentTick]);
 
   /**
    * Create proper Erc20Token objects from pool data
@@ -147,6 +179,7 @@ export function PositionConfigStep({
         onLiquidityChange={handleLiquidityChange}
         chain={chain}
         label="Position Size:"
+        onRefreshPool={refetchPoolPrice}
       />
 
       {/* Prospective APR */}
