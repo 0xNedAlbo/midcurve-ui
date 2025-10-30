@@ -10,6 +10,7 @@ import { ChainSelectionStep } from "./chain-selection-step";
 import { TokenPairStep } from "./token-pair-step";
 import { PoolSelectionStep } from "./pool-selection-step";
 import { PositionConfigStep, type PositionConfig } from "./position-config-step";
+import { OpenPositionStep } from "./open-position-step";
 import type { TokenSearchResult } from "@/hooks/positions/wizard/useTokenSearch";
 
 interface UniswapV3PositionWizardProps {
@@ -21,7 +22,6 @@ interface UniswapV3PositionWizardProps {
 export function UniswapV3PositionWizard({
   isOpen,
   onClose,
-  // @ts-expect-error TODO: Use this when position is created in step 5
   onPositionCreated,
 }: UniswapV3PositionWizardProps) {
   const TOTAL_STEPS = 6;
@@ -44,6 +44,8 @@ export function UniswapV3PositionWizard({
     useState<boolean>(false);
   const [isPoolSelected, setIsPoolSelected] = useState<boolean>(false);
   const [isPositionConfigValid, setIsPositionConfigValid] = useState<boolean>(false);
+  const [isOpenPositionValid, setIsOpenPositionValid] = useState<boolean>(false);
+  const [isPositionCreated, setIsPositionCreated] = useState<boolean>(false);
 
   // Handle closing wizard with confirmation if progress made
   const handleClose = useCallback(() => {
@@ -84,11 +86,11 @@ export function UniswapV3PositionWizard({
     // Step 4 (Position Config): Need valid position configuration
     if (currentStep === 4) return isPositionConfigValid;
 
-    // Future steps: Add more validation
-    // Step 5: Transaction ready validation
+    // Step 5 (Open Position): Transaction ready validation
+    if (currentStep === 5) return isOpenPositionValid;
 
     return false;
-  }, [currentStep, isChainSelected, isTokenPairSelected, isPoolSelected, isPositionConfigValid]);
+  }, [currentStep, isChainSelected, isTokenPairSelected, isPoolSelected, isPositionConfigValid, isOpenPositionValid]);
 
   // Get step title
   const getStepTitle = (step: number): string => {
@@ -181,8 +183,34 @@ export function UniswapV3PositionWizard({
             Please select a pool first.
           </div>
         );
-      // Future steps:
-      // case 5: return <OpenPositionStep ... />;
+      case 5:
+        return selectedChain &&
+          baseToken &&
+          quoteToken &&
+          selectedPool &&
+          tickLower !== null &&
+          tickUpper !== null &&
+          liquidity > 0n ? (
+          <OpenPositionStep
+            chain={selectedChain}
+            baseToken={baseToken}
+            quoteToken={quoteToken}
+            pool={selectedPool}
+            tickLower={tickLower}
+            tickUpper={tickUpper}
+            liquidity={liquidity}
+            onLiquidityChange={setLiquidity}
+            onPositionCreated={(position) => {
+              setIsPositionCreated(true);
+              onPositionCreated?.(position);
+            }}
+            onValidationChange={setIsOpenPositionValid}
+          />
+        ) : (
+          <div className="text-center text-slate-400">
+            Please configure your position first.
+          </div>
+        );
       default:
         return (
           <div className="text-center text-slate-400">
@@ -286,7 +314,7 @@ export function UniswapV3PositionWizard({
                   // Position created - close wizard
                   handleClose();
                 }}
-                disabled={true} // TODO: Enable when position is created
+                disabled={!isPositionCreated}
                 className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-600 disabled:text-slate-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors cursor-pointer"
               >
                 Finish

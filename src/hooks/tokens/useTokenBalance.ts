@@ -39,6 +39,12 @@ export interface UseTokenBalanceOptions {
    * Set to false to prevent automatic fetching
    */
   enabled?: boolean;
+
+  /**
+   * Polling interval in milliseconds (default: 20000)
+   * Set to lower value for real-time updates (e.g., 5000)
+   */
+  refetchInterval?: number;
 }
 
 export interface UseTokenBalanceReturn {
@@ -100,7 +106,7 @@ export interface UseTokenBalanceReturn {
 export function useTokenBalance(
   options: UseTokenBalanceOptions
 ): UseTokenBalanceReturn {
-  const { walletAddress, tokenAddress, chainId, enabled = true } = options;
+  const { walletAddress, tokenAddress, chainId, enabled = true, refetchInterval = 20000 } = options;
 
   const queryKey = [
     'token-balance',
@@ -144,8 +150,8 @@ export function useTokenBalance(
     queryKey,
     queryFn,
     enabled: enabled && !!walletAddress && !!tokenAddress,
-    refetchInterval: 20000, // Poll every 20 seconds
-    staleTime: 15000, // Consider data stale after 15 seconds
+    refetchInterval, // Configurable polling interval
+    staleTime: Math.max(0, refetchInterval - 5000), // Slightly less than refetch interval
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     retry: (failureCount, error) => {
       // Don't retry validation errors (4xx)
