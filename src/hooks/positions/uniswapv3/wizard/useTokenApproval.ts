@@ -66,8 +66,6 @@ export function useTokenApproval({
     data: allowanceData,
     isLoading: isLoadingAllowance,
     refetch: refetchAllowance,
-    error: readError,
-    status: readStatus,
   } = useReadContract({
     address: tokenAddress ?? undefined,
     abi: ERC20_ABI,

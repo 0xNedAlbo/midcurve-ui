@@ -9,7 +9,7 @@ import type { UniswapV3Pool, Erc20Token } from "@midcurve/shared";
 import { getTokenAmountsFromLiquidity } from "@midcurve/shared";
 import { formatCompactValue } from "@/lib/fraction-format";
 import type { EvmChainSlug } from "@/config/chains";
-import { usePositionSizeCalculation } from "@/hooks/positions/wizard/usePositionSizeCalculation";
+import { usePositionSizeCalculation } from "@/hooks/positions/uniswapv3/wizard/usePositionSizeCalculation";
 
 interface PositionSizeConfigProps {
   pool: UniswapV3Pool;

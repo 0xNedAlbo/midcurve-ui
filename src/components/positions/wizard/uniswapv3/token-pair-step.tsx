@@ -18,8 +18,8 @@ import {
 import {
   useTokenSearch,
   type TokenSearchResult,
-} from "@/hooks/positions/wizard/useTokenSearch";
-import { useTokenPairValidation } from "@/hooks/positions/wizard/useTokenPairValidation";
+} from "@/hooks/positions/uniswapv3/wizard/useTokenSearch";
+import { useTokenPairValidation } from "@/hooks/positions/uniswapv3/wizard/useTokenPairValidation";
 import {
   truncateAddress,
   truncateText,

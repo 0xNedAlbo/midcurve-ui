@@ -10,8 +10,8 @@ import { Eye } from "lucide-react";
 
 import { PositionRangeConfig } from "./position-range-config";
 import { PositionSizeConfig } from "./position-size-config";
-import type { TokenSearchResult } from "@/hooks/positions/wizard/useTokenSearch";
-import { usePositionAprCalculation } from "@/hooks/positions/wizard/usePositionAprCalculation";
+import type { TokenSearchResult } from "@/hooks/positions/uniswapv3/wizard/useTokenSearch";
+import { usePositionAprCalculation } from "@/hooks/positions/uniswapv3/wizard/usePositionAprCalculation";
 import { usePoolPrice } from "@/hooks/pools/usePoolPrice";
 
 interface PositionConfigStepProps {

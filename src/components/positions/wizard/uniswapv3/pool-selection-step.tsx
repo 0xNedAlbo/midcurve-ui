@@ -16,11 +16,11 @@
 import { Loader2, AlertCircle, Zap, ExternalLink, Copy } from 'lucide-react';
 import type { PoolDiscoveryResult } from '@midcurve/shared';
 import type { EvmChainSlug } from '@/config/chains';
-import type { TokenSearchResult } from '@/hooks/positions/wizard/useTokenSearch';
+import type { TokenSearchResult } from '@/hooks/positions/uniswapv3/wizard/useTokenSearch';
 import {
   usePoolDiscovery,
   getRecommendedPool,
-} from '@/hooks/positions/wizard/usePoolDiscovery';
+} from '@/hooks/positions/uniswapv3/wizard/usePoolDiscovery';
 import { formatFeeTier, formatUSDValue } from '@/lib/format-helpers';
 import { CHAIN_METADATA } from '@/config/chains';
 

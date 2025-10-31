@@ -5,8 +5,8 @@ import { useConnectModal } from '@rainbow-me/rainbowkit';
 import type { Address } from 'viem';
 import type { EvmChainSlug } from '@/config/chains';
 import { formatCompactValue } from '@/lib/fraction-format';
-import type { UseTokenApprovalResult } from '@/hooks/positions/wizard/useTokenApproval';
-import type { UseMintPositionResult } from '@/hooks/positions/wizard/useMintPosition';
+import type { UseTokenApprovalResult } from '@/hooks/positions/uniswapv3/wizard/useTokenApproval';
+import type { UseMintPositionResult } from '@/hooks/positions/uniswapv3/wizard/useMintPosition';
 import { CHAIN_METADATA } from '@/config/chains';
 
 interface PoolData {

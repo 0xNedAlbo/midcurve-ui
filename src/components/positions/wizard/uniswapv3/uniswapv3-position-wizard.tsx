@@ -11,7 +11,7 @@ import { TokenPairStep } from "./token-pair-step";
 import { PoolSelectionStep } from "./pool-selection-step";
 import { PositionConfigStep, type PositionConfig } from "./position-config-step";
 import { OpenPositionStep } from "./open-position-step";
-import type { TokenSearchResult } from "@/hooks/positions/wizard/useTokenSearch";
+import type { TokenSearchResult } from "@/hooks/positions/uniswapv3/wizard/useTokenSearch";
 
 interface UniswapV3PositionWizardProps {
   isOpen: boolean;
