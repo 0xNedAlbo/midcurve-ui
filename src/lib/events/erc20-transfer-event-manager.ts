@@ -197,10 +197,6 @@ export class Erc20TransferEventManager {
       callback,
     });
 
-    console.log(
-      `[Erc20TransferEventManager] Subscribed to ${tokenAddress} on chain ${chainId} (${watcher.subscribers.size} subscribers)`
-    );
-
     // Return unsubscribe function
     return () => {
       this.unsubscribe(tokenKey, subscriberId, chainId, tokenAddress);
@@ -223,10 +219,6 @@ export class Erc20TransferEventManager {
     if (!this.publicClient) {
       throw new Error('PublicClient not set');
     }
-
-    console.log(
-      `[Erc20TransferEventManager] Creating watcher for ${tokenAddress} on chain ${chainId}`
-    );
 
     // Watch Transfer events for this token using viem
     const unwatch = this.publicClient.watchContractEvent({
@@ -309,15 +301,8 @@ export class Erc20TransferEventManager {
     // Remove subscriber
     watcher.subscribers.delete(subscriberId);
 
-    console.log(
-      `[Erc20TransferEventManager] Unsubscribed from ${tokenAddress} on chain ${chainId} (${watcher.subscribers.size} subscribers remaining)`
-    );
-
     // If no more subscribers, destroy watcher (cleanup)
     if (watcher.subscribers.size === 0) {
-      console.log(
-        `[Erc20TransferEventManager] Destroying watcher for ${tokenAddress} on chain ${chainId}`
-      );
       watcher.unwatch(); // Stop watching events
       this.watchers.delete(tokenKey);
     }
@@ -339,10 +324,6 @@ export class Erc20TransferEventManager {
    * Should be called when application unmounts
    */
   public destroy(): void {
-    console.log(
-      `[Erc20TransferEventManager] Destroying ${this.watchers.size} watchers`
-    );
-
     this.watchers.forEach((watcher) => {
       watcher.unwatch();
     });

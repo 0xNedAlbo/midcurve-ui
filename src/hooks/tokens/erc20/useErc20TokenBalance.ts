@@ -210,13 +210,7 @@ export function useErc20TokenBalance(
     tokenAddress,
     walletAddress,
     enabled: enabled && !!walletAddress && !!tokenAddress,
-    onTransfer: (event) => {
-      console.log(
-        `[useErc20TokenBalance] Transfer event detected for ${tokenAddress}:`,
-        event
-      );
-      console.log(`[useErc20TokenBalance] Refetching balance...`);
-
+    onTransfer: () => {
       // Refetch balance when Transfer detected
       query.refetch();
     },

@@ -73,14 +73,12 @@ export function Erc20TransferEventProvider({
   useEffect(() => {
     if (publicClient) {
       manager.setPublicClient(publicClient);
-      console.log('[Erc20TransferEventProvider] PublicClient initialized');
     }
   }, [publicClient, manager]);
 
   // Cleanup all watchers when provider unmounts (app closes)
   useEffect(() => {
     return () => {
-      console.log('[Erc20TransferEventProvider] Cleaning up all watchers');
       manager.destroy();
     };
   }, [manager]);

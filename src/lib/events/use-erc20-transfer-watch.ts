@@ -159,10 +159,6 @@ export function useErc20TransferWatch(
       return;
     }
 
-    console.log(
-      `[useErc20TransferWatch] Subscribing to ${tokenAddress} for wallet ${walletAddress} on chain ${chainId}`
-    );
-
     // Subscribe to Transfer events
     const unsubscribe = manager.subscribe(
       chainId,
@@ -176,9 +172,6 @@ export function useErc20TransferWatch(
 
     // Cleanup: unsubscribe when component unmounts or dependencies change
     return () => {
-      console.log(
-        `[useErc20TransferWatch] Unsubscribing from ${tokenAddress} for wallet ${walletAddress} on chain ${chainId}`
-      );
       unsubscribe();
     };
   }, [enabled, chainId, tokenAddress, walletAddress, manager]);
