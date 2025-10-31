@@ -6,7 +6,7 @@ import { formatCompactValue } from "@/lib/fraction-format";
 import type { EvmChainSlug } from "@/config/chains";
 import { getChainId } from "@/config/chains";
 import type { Erc20Token } from "@midcurve/shared";
-import { useTokenBalance } from "@/hooks/tokens/useTokenBalance";
+import { useErc20TokenBalance } from "@/hooks/tokens/erc20/useErc20TokenBalance";
 
 interface TokenAmountInputProps {
   token: Erc20Token;
@@ -59,12 +59,12 @@ export function TokenAmountInput({
   // Get chain ID from chain slug
   const chainId = chain ? getChainId(chain) : 1; // Default to Ethereum if not provided
 
-  // Fetch balance via backend API (polls every 20 seconds)
+  // Fetch balance via backend API and watch for real-time Transfer events (singleton)
   const {
     balanceBigInt: balanceData,
     isLoading: balanceLoading,
     isError: balanceError,
-  } = useTokenBalance({
+  } = useErc20TokenBalance({
     walletAddress: walletAddress || null,
     tokenAddress: token.config?.address || null,
     chainId,

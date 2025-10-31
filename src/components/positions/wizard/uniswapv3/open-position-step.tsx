@@ -12,7 +12,7 @@ import { useTokenApproval } from '@/hooks/positions/uniswapv3/wizard/useTokenApp
 import { useMintPosition } from '@/hooks/positions/uniswapv3/wizard/useMintPosition';
 import { useCreatePositionAPI } from '@/hooks/positions/uniswapv3/wizard/useCreatePositionAPI';
 import { usePoolPrice } from '@/hooks/pools/usePoolPrice';
-import { useTokenBalance } from '@/hooks/tokens/useTokenBalance';
+import { useErc20TokenBalance } from '@/hooks/tokens/erc20/useErc20TokenBalance';
 import { WalletBalanceSection } from './shared/wallet-balance-section';
 import {
   InsufficientFundsAlert,
@@ -124,21 +124,19 @@ export function OpenPositionStep({
     ? token1Amount
     : token0Amount;
 
-  // Fetch wallet balances with 5-second polling via backend API
-  const baseBalanceQuery = useTokenBalance({
+  // Fetch wallet balances with real-time Transfer event watching (singleton)
+  const baseBalanceQuery = useErc20TokenBalance({
     walletAddress: userAddress || null,
     tokenAddress: baseToken.address,
     chainId: expectedChainId,
     enabled: isConnected && !isWrongNetwork,
-    refetchInterval: 5000, // Poll every 5 seconds
   });
 
-  const quoteBalanceQuery = useTokenBalance({
+  const quoteBalanceQuery = useErc20TokenBalance({
     walletAddress: userAddress || null,
     tokenAddress: quoteToken.address,
     chainId: expectedChainId,
     enabled: isConnected && !isWrongNetwork,
-    refetchInterval: 5000, // Poll every 5 seconds
   });
 
   const baseBalance = baseBalanceQuery.balanceBigInt || 0n;

@@ -4,6 +4,7 @@ import './globals.css';
 import { Web3Provider } from '@/providers/web3-provider';
 import { QueryProvider } from '@/providers/query-provider';
 import { SessionProvider } from 'next-auth/react';
+import { Erc20TransferEventProvider } from '@/lib/events/erc20-transfer-event-context';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -32,7 +33,11 @@ export default function RootLayout({
       >
         <SessionProvider>
           <QueryProvider>
-            <Web3Provider>{children}</Web3Provider>
+            <Web3Provider>
+              <Erc20TransferEventProvider>
+                {children}
+              </Erc20TransferEventProvider>
+            </Web3Provider>
           </QueryProvider>
         </SessionProvider>
       </body>
