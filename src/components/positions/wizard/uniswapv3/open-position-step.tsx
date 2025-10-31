@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { useAccount, useChainId } from 'wagmi';
 import type { Address } from 'viem';
+import { getAddress } from 'viem';
 import type { EvmChainSlug } from '@/config/chains';
 import type { PoolDiscoveryResult } from '@midcurve/shared';
 import { getTokenAmountsFromLiquidity, getTokenMapping } from '@midcurve/shared';
@@ -143,9 +144,9 @@ export function OpenPositionStep({
     requiredQuoteAmount,
   ]);
 
-  // Token approval hooks
+  // Token approval hooks (with EIP-55 checksumming)
   const baseApproval = useTokenApproval({
-    tokenAddress: baseToken.address as Address,
+    tokenAddress: getAddress(baseToken.address) as Address,
     ownerAddress: userAddress ?? null,
     requiredAmount: requiredBaseAmount,
     chainId: expectedChainId,
@@ -154,7 +155,7 @@ export function OpenPositionStep({
   });
 
   const quoteApproval = useTokenApproval({
-    tokenAddress: quoteToken.address as Address,
+    tokenAddress: getAddress(quoteToken.address) as Address,
     ownerAddress: userAddress ?? null,
     requiredAmount: requiredQuoteAmount,
     chainId: expectedChainId,
