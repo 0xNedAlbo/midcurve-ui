@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { decodeEventLog, type Address, type TransactionReceipt } from "viem";
 import type { EvmChainSlug } from "@/config/chains";
+import { getChainId } from "@/config/chains";
 
 // IncreaseLiquidity event ABI from Uniswap V3 NonfungiblePositionManager
 const INCREASE_LIQUIDITY_EVENT_ABI = {
@@ -92,8 +93,11 @@ export function useCreatePositionAPI() {
                 data.receipt
             );
 
+            // Convert chain slug to numeric chain ID for API
+            const numericChainId = getChainId(data.chainId);
+
             const response = await fetch(
-                `/api/v1/positions/uniswapv3/${data.chainId}/${data.nftId}`,
+                `/api/v1/positions/uniswapv3/${numericChainId}/${data.nftId}`,
                 {
                     method: "PUT",
                     headers: {
