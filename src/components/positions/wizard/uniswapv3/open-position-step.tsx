@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAccount, useChainId } from 'wagmi';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
@@ -65,33 +65,57 @@ export function OpenPositionStep({
   // Check if on wrong network
   const isWrongNetwork = isConnected && connectedChainId !== expectedChainId;
 
+  // Local pool state to manage pool with updated prices
+  const [localPool, setLocalPool] = useState<PoolDiscoveryResult<'uniswapv3'>>(pool);
+
   // Fetch latest pool price (with refresh capability)
-  const { refetch: refetchPoolPrice } = usePoolPrice({
+  const {
+    sqrtPriceX96: latestSqrtPriceX96,
+    currentTick: latestCurrentTick,
+    refetch: refetchPoolPrice,
+  } = usePoolPrice({
     chainId: pool.pool.config.chainId.toString(),
     poolAddress: pool.pool.config.address,
     enabled: true,
   });
 
+  // Update pool state when fresh price data arrives
+  useEffect(() => {
+    if (latestSqrtPriceX96 && latestCurrentTick !== undefined) {
+      setLocalPool((prevPool) => ({
+        ...prevPool,
+        pool: {
+          ...prevPool.pool,
+          state: {
+            ...prevPool.pool.state,
+            sqrtPriceX96: BigInt(latestSqrtPriceX96),
+            currentTick: latestCurrentTick,
+          },
+        },
+      }));
+    }
+  }, [latestSqrtPriceX96, latestCurrentTick]);
+
   // Calculate required token amounts from liquidity
   const { token0Amount, token1Amount} = useMemo(() => {
     return getTokenAmountsFromLiquidity(
       liquidity,
-      BigInt(pool.pool.state.sqrtPriceX96),
+      BigInt(localPool.pool.state.sqrtPriceX96),
       tickLower,
       tickUpper,
       false // roundUp = false for floor amounts
     );
-  }, [liquidity, pool.pool.state.sqrtPriceX96, tickLower, tickUpper]);
+  }, [liquidity, localPool.pool.state.sqrtPriceX96, tickLower, tickUpper]);
 
   // Map token0/token1 to base/quote
   const tokenMapping = useMemo(() => {
     return getTokenMapping(
-      pool.pool.token0.config.address,
-      pool.pool.token1.config.address,
+      localPool.pool.token0.config.address,
+      localPool.pool.token1.config.address,
       baseToken.address,
       quoteToken.address
     );
-  }, [pool.pool.token0.config.address, pool.pool.token1.config.address, baseToken.address, quoteToken.address]);
+  }, [localPool.pool.token0.config.address, localPool.pool.token1.config.address, baseToken.address, quoteToken.address]);
 
   const requiredBaseAmount = tokenMapping.baseIsToken0
     ? token0Amount
@@ -312,14 +336,14 @@ export function OpenPositionStep({
     <div className="space-y-6">
       {/* Position Size Configuration */}
       <PositionSizeConfig
-        pool={pool.pool}
-        baseToken={pool.pool.token0.config.address.toLowerCase() === baseToken.address.toLowerCase()
-          ? pool.pool.token0 as any
-          : pool.pool.token1 as any
+        pool={localPool.pool}
+        baseToken={localPool.pool.token0.config.address.toLowerCase() === baseToken.address.toLowerCase()
+          ? localPool.pool.token0 as any
+          : localPool.pool.token1 as any
         }
-        quoteToken={pool.pool.token0.config.address.toLowerCase() === quoteToken.address.toLowerCase()
-          ? pool.pool.token0 as any
-          : pool.pool.token1 as any
+        quoteToken={localPool.pool.token0.config.address.toLowerCase() === quoteToken.address.toLowerCase()
+          ? localPool.pool.token0 as any
+          : localPool.pool.token1 as any
         }
         tickLower={tickLower}
         tickUpper={tickUpper}
