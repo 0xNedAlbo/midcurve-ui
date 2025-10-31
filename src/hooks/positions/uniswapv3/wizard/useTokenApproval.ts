@@ -104,18 +104,28 @@ export function useTokenApproval({
   } = useWriteContract();
 
   // Wait for approval transaction confirmation
-  const { isLoading: isWaitingForConfirmation, isSuccess: isApprovalConfirmed } =
-    useWaitForTransactionReceipt({
-      hash: approvalTxHash,
-      chainId,
-    });
+  const {
+    isLoading: isWaitingForConfirmation,
+    isSuccess: isApprovalConfirmed,
+    error: receiptError,
+  } = useWaitForTransactionReceipt({
+    hash: approvalTxHash,
+    chainId,
+  });
 
-  // Handle approval errors
+  // Handle approval errors (both pre-transaction and post-transaction)
   useEffect(() => {
     if (writeError) {
       setApprovalError(writeError);
     }
   }, [writeError]);
+
+  // Handle transaction receipt errors (transaction sent but failed onchain)
+  useEffect(() => {
+    if (receiptError) {
+      setApprovalError(receiptError);
+    }
+  }, [receiptError]);
 
   // Refetch allowance after approval is confirmed
   useEffect(() => {

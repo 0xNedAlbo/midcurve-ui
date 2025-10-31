@@ -85,17 +85,25 @@ export function useMintPosition(
     isLoading: isWaitingForConfirmation,
     isSuccess,
     data: receipt,
+    error: receiptError,
   } = useWaitForTransactionReceipt({
     hash: mintTxHash,
     chainId: params?.chainId,
   });
 
-  // Handle mint errors
+  // Handle mint errors (both pre-transaction and post-transaction)
   useEffect(() => {
     if (writeError) {
       setMintError(writeError);
     }
   }, [writeError]);
+
+  // Handle transaction receipt errors (transaction sent but failed onchain)
+  useEffect(() => {
+    if (receiptError) {
+      setMintError(receiptError);
+    }
+  }, [receiptError]);
 
   // Extract tokenId from transaction receipt
   useEffect(() => {

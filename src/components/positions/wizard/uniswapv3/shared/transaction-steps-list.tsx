@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, Check, Circle, ExternalLink } from 'lucide-react';
+import { Loader2, Check, Circle, ExternalLink, AlertTriangle } from 'lucide-react';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import type { Address } from 'viem';
 import type { EvmChainSlug } from '@/config/chains';
@@ -8,6 +8,7 @@ import { formatCompactValue } from '@/lib/fraction-format';
 import type { UseTokenApprovalResult } from '@/hooks/positions/uniswapv3/wizard/useTokenApproval';
 import type { UseMintPositionResult } from '@/hooks/positions/uniswapv3/wizard/useMintPosition';
 import { CHAIN_METADATA } from '@/config/chains';
+import { parseTransactionError } from '@/utils/parse-transaction-error';
 
 interface PoolData {
   token0: {
@@ -150,8 +151,18 @@ export function TransactionStepsList({
                 )}
             </div>
             {baseApproval.approvalError && (
-              <div className="text-xs text-red-400 ml-8">
-                Error: {baseApproval.approvalError.message}
+              <div className="ml-8 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold text-red-400 mb-1">
+                      {parseTransactionError(baseApproval.approvalError).title}
+                    </div>
+                    <div className="text-sm text-red-300/90">
+                      {parseTransactionError(baseApproval.approvalError).message}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -211,8 +222,18 @@ export function TransactionStepsList({
                 )}
             </div>
             {quoteApproval.approvalError && (
-              <div className="text-xs text-red-400 ml-8">
-                Error: {quoteApproval.approvalError.message}
+              <div className="ml-8 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold text-red-400 mb-1">
+                      {parseTransactionError(quoteApproval.approvalError).title}
+                    </div>
+                    <div className="text-sm text-red-300/90">
+                      {parseTransactionError(quoteApproval.approvalError).message}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -269,8 +290,18 @@ export function TransactionStepsList({
             </div>
           )}
           {mintPosition.mintError && (
-            <div className="text-xs text-red-400 ml-8">
-              Error: {mintPosition.mintError.message}
+            <div className="ml-8 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-red-400 mb-1">
+                    {parseTransactionError(mintPosition.mintError).title}
+                  </div>
+                  <div className="text-sm text-red-300/90">
+                    {parseTransactionError(mintPosition.mintError).message}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
