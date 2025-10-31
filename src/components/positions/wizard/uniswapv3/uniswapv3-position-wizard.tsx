@@ -49,7 +49,7 @@ export function UniswapV3PositionWizard({
 
   // Handle closing wizard with confirmation if progress made
   const handleClose = useCallback(() => {
-    if (currentStep > 0) {
+    if (currentStep > 0 && !isPositionCreated) {
       const confirmed = window.confirm(
         'Close wizard? Your progress will be lost.'
       );
@@ -62,12 +62,18 @@ export function UniswapV3PositionWizard({
     setBaseToken(null);
     setQuoteToken(null);
     setSelectedPool(null);
+    setTickLower(null);
+    setTickUpper(null);
+    setLiquidity(0n);
     setIsChainSelected(false);
     setIsTokenPairSelected(false);
     setIsPoolSelected(false);
+    setIsPositionConfigValid(false);
+    setIsOpenPositionValid(false);
+    setIsPositionCreated(false);
 
     onClose?.();
-  }, [currentStep, onClose]);
+  }, [currentStep, isPositionCreated, onClose]);
 
   // Validation logic for "Next" button
   const canGoNext = useCallback(() => {

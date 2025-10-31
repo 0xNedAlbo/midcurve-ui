@@ -229,8 +229,8 @@ export function CreatePositionDropdown() {
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
         onPositionCreated={() => {
-          setIsWizardOpen(false);
-          // Trigger position list refresh
+          // Don't auto-close - let user click "Finish" button
+          // Just trigger position list refresh
           queryClient.invalidateQueries({ queryKey: ['positions', 'list'] });
         }}
       />

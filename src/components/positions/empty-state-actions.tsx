@@ -261,7 +261,7 @@ export function EmptyStateActions({
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
         onPositionCreated={(position) => {
-          setIsWizardOpen(false);
+          // Don't auto-close - let user click "Finish" button
           onImportSuccess?.(position);
         }}
       />

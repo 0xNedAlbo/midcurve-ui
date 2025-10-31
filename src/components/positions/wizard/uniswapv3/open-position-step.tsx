@@ -395,40 +395,6 @@ export function OpenPositionStep({
         onOpenPosition={handleOpenPosition}
       />
 
-      {/* Success State */}
-      {createPositionAPI.isSuccess && (
-        <div className="bg-green-900/20 border border-green-500/50 rounded-lg p-6 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
-              <svg
-                className="w-10 h-10 text-green-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-          </div>
-          <h3 className="text-2xl font-bold text-white mb-2">
-            Position Created Successfully!
-          </h3>
-          <p className="text-slate-300 mb-4">
-            Your Uniswap V3 position has been opened and is now active.
-          </p>
-          {mintPosition.tokenId && (
-            <p className="text-sm text-slate-400 mb-6">
-              Position NFT ID: #{mintPosition.tokenId.toString()}
-            </p>
-          )}
-        </div>
-      )}
-
       {/* API Error */}
       {createPositionAPI.isError && (
         <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-4">
