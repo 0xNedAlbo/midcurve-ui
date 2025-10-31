@@ -156,7 +156,9 @@ export function usePoolPrice({
     isError: query.isError,
     error: query.error?.message ?? null,
     refetch: async () => {
-      await query.refetch();
+      // Force refetch by canceling stale time
+      // This ensures the refresh button always fetches fresh data
+      await query.refetch({ cancelRefetch: true });
     },
   };
 }
