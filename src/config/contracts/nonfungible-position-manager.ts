@@ -31,10 +31,11 @@ export function getNonfungiblePositionManagerAddress(
 }
 
 /**
- * Minimal NonfungiblePositionManager ABI
- * Contains only the mint() function for position creation
+ * NonfungiblePositionManager ABI
+ * Contains functions for position creation, modification, and withdrawal
  */
 export const NONFUNGIBLE_POSITION_MANAGER_ABI = [
+  // mint() - Create new position
   {
     inputs: [
       {
@@ -65,6 +66,59 @@ export const NONFUNGIBLE_POSITION_MANAGER_ABI = [
     stateMutability: 'payable',
     type: 'function',
   },
+  // decreaseLiquidity() - Remove liquidity from position
+  {
+    inputs: [
+      {
+        components: [
+          { name: 'tokenId', type: 'uint256' },
+          { name: 'liquidity', type: 'uint128' },
+          { name: 'amount0Min', type: 'uint256' },
+          { name: 'amount1Min', type: 'uint256' },
+          { name: 'deadline', type: 'uint256' },
+        ],
+        name: 'params',
+        type: 'tuple',
+      },
+    ],
+    name: 'decreaseLiquidity',
+    outputs: [
+      { name: 'amount0', type: 'uint256' },
+      { name: 'amount1', type: 'uint256' },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  // collect() - Collect tokens from position
+  {
+    inputs: [
+      {
+        components: [
+          { name: 'tokenId', type: 'uint256' },
+          { name: 'recipient', type: 'address' },
+          { name: 'amount0Max', type: 'uint128' },
+          { name: 'amount1Max', type: 'uint128' },
+        ],
+        name: 'params',
+        type: 'tuple',
+      },
+    ],
+    name: 'collect',
+    outputs: [
+      { name: 'amount0', type: 'uint256' },
+      { name: 'amount1', type: 'uint256' },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  // multicall() - Execute multiple operations in one transaction
+  {
+    inputs: [{ name: 'data', type: 'bytes[]' }],
+    name: 'multicall',
+    outputs: [{ name: 'results', type: 'bytes[]' }],
+    stateMutability: 'payable',
+    type: 'function',
+  },
   // Transfer event for extracting tokenId
   {
     anonymous: false,
@@ -74,6 +128,42 @@ export const NONFUNGIBLE_POSITION_MANAGER_ABI = [
       { indexed: true, name: 'tokenId', type: 'uint256' },
     ],
     name: 'Transfer',
+    type: 'event',
+  },
+  // IncreaseLiquidity event
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'tokenId', type: 'uint256' },
+      { indexed: false, name: 'liquidity', type: 'uint128' },
+      { indexed: false, name: 'amount0', type: 'uint256' },
+      { indexed: false, name: 'amount1', type: 'uint256' },
+    ],
+    name: 'IncreaseLiquidity',
+    type: 'event',
+  },
+  // DecreaseLiquidity event
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'tokenId', type: 'uint256' },
+      { indexed: false, name: 'liquidity', type: 'uint128' },
+      { indexed: false, name: 'amount0', type: 'uint256' },
+      { indexed: false, name: 'amount1', type: 'uint256' },
+    ],
+    name: 'DecreaseLiquidity',
+    type: 'event',
+  },
+  // Collect event
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'tokenId', type: 'uint256' },
+      { indexed: false, name: 'recipient', type: 'address' },
+      { indexed: false, name: 'amount0', type: 'uint256' },
+      { indexed: false, name: 'amount1', type: 'uint256' },
+    ],
+    name: 'Collect',
     type: 'event',
   },
 ] as const;
