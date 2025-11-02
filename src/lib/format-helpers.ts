@@ -127,9 +127,10 @@ export function calculateAPR(params: {
   const now = Date.now();
   const timeElapsedMs = now - startTime;
 
-  // Need at least 1 hour of data for meaningful APR
-  const ONE_HOUR_MS = 60 * 60 * 1000;
-  if (timeElapsedMs < ONE_HOUR_MS) {
+  // Need at least 5 minutes of data for meaningful APR
+  // This prevents wild swings in the first few minutes but allows quick feedback
+  const MIN_TIME_MS = 5 * 60 * 1000; // 5 minutes
+  if (timeElapsedMs < MIN_TIME_MS) {
     return 0;
   }
 
@@ -146,7 +147,9 @@ export function calculateAPR(params: {
   const apr = (feesFloat / costBasisFloat / timeElapsedDays) * 365 * 100;
 
   // Cap at 9999% to avoid display issues with extreme values
-  return Math.min(apr, 9999);
+  const cappedApr = Math.min(apr, 9999);
+
+  return cappedApr;
 }
 
 /**
