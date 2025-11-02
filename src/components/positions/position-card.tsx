@@ -14,17 +14,20 @@ import { UniswapV3MiniPnLCurve } from "./protocol/uniswapv3/uniswapv3-mini-pnl-c
 import { PositionActionsMenu } from "./position-actions-menu";
 import { DeletePositionModal } from "./delete-position-modal";
 import { useIsDeletingPosition } from "@/hooks/positions/useDeletePosition";
+import { useRefreshPosition } from "@/hooks/positions/useRefreshPosition";
 
 interface PositionCardProps {
   position: ListPositionData;
 }
 
 export function PositionCard({ position }: PositionCardProps) {
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Check if this specific position is being deleted
   const isDeleting = useIsDeletingPosition(position.id);
+
+  // Refresh mutation
+  const refreshMutation = useRefreshPosition();
 
   // Extract common data (works for ALL protocols)
   const quoteToken = position.isToken0Quote
@@ -38,11 +41,25 @@ export function PositionCard({ position }: PositionCardProps) {
   // Calculate in-range status (protocol-agnostic dispatcher)
   const isInRange = calculateIsInRange(position);
 
-  // Placeholder refresh handler
+  // Real refresh handler - extracts protocol-specific params
   const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
-    console.log("Refresh clicked - functionality not implemented yet");
+    switch (position.protocol) {
+      case "uniswapv3": {
+        const config = position.config as {
+          chainId: number;
+          nftId: number;
+        };
+        refreshMutation.mutate({
+          protocol: "uniswapv3",
+          chainId: config.chainId,
+          nftId: String(config.nftId),
+        });
+        break;
+      }
+      // Future protocols can be added here
+      default:
+        console.warn(`Refresh not implemented for protocol: ${position.protocol}`);
+    }
   };
 
   return (
@@ -98,13 +115,13 @@ export function PositionCard({ position }: PositionCardProps) {
           </Link>
           <button
             onClick={handleRefresh}
-            disabled={isRefreshing}
+            disabled={refreshMutation.isPending}
             className="p-1.5 md:p-2 hover:bg-slate-700/50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
             title="Refresh"
           >
             <RefreshCw
               className={`w-3.5 h-3.5 md:w-4 md:h-4 text-slate-400 ${
-                isRefreshing ? "animate-spin" : ""
+                refreshMutation.isPending ? "animate-spin" : ""
               }`}
             />
           </button>
