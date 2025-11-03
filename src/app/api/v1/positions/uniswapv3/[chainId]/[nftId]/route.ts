@@ -389,21 +389,37 @@ export async function DELETE(
 /**
  * PUT /api/v1/positions/uniswapv3/:chainId/:nftId
  *
- * Create a Uniswap V3 position from user-provided data after sending an
- * INCREASE_LIQUIDITY transaction on-chain.
+ * Create a Uniswap V3 position from user-provided data after executing an
+ * INCREASE_LIQUIDITY transaction on-chain (minting NFT + opening position).
  *
- * Features:
+ * **Missing Events Flow (Position Creation):**
+ * This endpoint implements the missing events pattern for new positions:
+ * 1. Accept initial INCREASE_LIQUIDITY event from mint transaction receipt
+ * 2. Create position metadata (pool, ticks, owner, quote token)
+ * 3. Store initial event as missing event in sync state
+ * 4. Return newly created position
+ * 5. Next refresh will process missing event via Layer 2 Step 0
+ *
+ * **Why Missing Events for New Positions?**
+ * When a user mints a new position via the UI, the INCREASE_LIQUIDITY event
+ * may not be indexed by Etherscan yet. Storing it as a "missing event" ensures:
+ * - Position is created immediately with correct metadata
+ * - Event will be processed when next refresh() is called
+ * - Automatic deduplication when Etherscan eventually indexes it
+ *
+ * **Features:**
  * - Idempotent: Returns existing position if already created
  * - Minimal on-chain calls (pool discovery + historic pool price)
- * - Full PnL tracking via ledger events
+ * - Full PnL tracking via ledger events (processed on first refresh)
  * - Auto quote token detection or explicit selection
- * - Historic pool price at event blockNumber
+ * - Initial event stored as missing event (handles indexer lag)
  *
- * Path parameters:
+ * **Path Parameters:**
  * - chainId: EVM chain ID (e.g., 1 = Ethereum, 42161 = Arbitrum, etc.)
  * - nftId: Uniswap V3 NFT token ID (positive integer)
  *
- * Request body:
+ * **Request Body:**
+ * ```json
  * {
  *   "poolAddress": "0x...",
  *   "tickUpper": 201120,
@@ -421,10 +437,12 @@ export async function DELETE(
  *     "amount1": "250000000000000000"
  *   }
  * }
+ * ```
  *
- * Returns: Full position object with current on-chain state and financial tracking
+ * **Returns:** Full position object with metadata (ledger populated on first refresh)
  *
- * Example response:
+ * **Example Response:**
+ * ```json
  * {
  *   "success": true,
  *   "data": {
@@ -435,10 +453,10 @@ export async function DELETE(
  *     "unrealizedPnl": "0",
  *     "pool": { ... },
  *     "config": { ... },
- *     "state": { ... },
- *     ...
+ *     "state": { ... }
  *   }
  * }
+ * ```
  */
 export async function PUT(
   request: NextRequest,
@@ -533,6 +551,30 @@ export async function PUT(
         }
       );
 
+      // 5. Store initial event as missing event (handles indexer lag)
+      const syncState = await UniswapV3PositionSyncState.load(prisma, position.id);
+
+      // Convert initial event to missing event format
+      const missingEvent = {
+        eventType: 'INCREASE_LIQUIDITY' as const,
+        timestamp: increaseEvent.timestamp,
+        blockNumber: increaseEvent.blockNumber,
+        transactionIndex: increaseEvent.transactionIndex,
+        logIndex: increaseEvent.logIndex,
+        transactionHash: increaseEvent.transactionHash,
+        liquidity: increaseEvent.liquidity,
+        amount0: increaseEvent.amount0,
+        amount1: increaseEvent.amount1,
+      };
+
+      syncState.addMissingEvent(missingEvent);
+      await syncState.save(prisma);
+
+      apiLogger.info(
+        { requestId, userId: user.id, chainId, nftId, positionId: position.id },
+        'Initial INCREASE_LIQUIDITY event stored as missing event'
+      );
+
       apiLog.businessOperation(apiLogger, requestId, 'created', 'position', position.id, {
         chainId,
         nftId,
@@ -543,7 +585,7 @@ export async function PUT(
         currentValue: position.currentValue.toString(),
       });
 
-      // 5. Serialize bigints to strings for JSON
+      // 6. Serialize bigints to strings for JSON
       const serializedPosition = serializeBigInt(position) as CreateUniswapV3PositionData;
 
       const response = createSuccessResponse(serializedPosition);
