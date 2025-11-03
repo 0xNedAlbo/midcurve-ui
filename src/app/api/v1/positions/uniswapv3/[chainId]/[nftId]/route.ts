@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/middleware/with-auth';
-import { UniswapV3PositionService } from '@midcurve/services';
+import { UniswapV3PositionService, UniswapV3PositionSyncState } from '@midcurve/services';
 import {
   createSuccessResponse,
   createErrorResponse,
@@ -28,6 +28,7 @@ import {
 } from '@midcurve/api-shared';
 import { serializeBigInt } from '@/lib/serializers';
 import { apiLogger, apiLog } from '@/lib/logger';
+import { prisma } from '@/lib/prisma';
 import type {
   GetUniswapV3PositionResponse,
   DeleteUniswapV3PositionResponse,
@@ -653,36 +654,69 @@ export async function PUT(
 /**
  * PATCH /api/v1/positions/uniswapv3/:chainId/:nftId
  *
- * Update an existing Uniswap V3 position by adding new events from user data.
+ * Update an existing Uniswap V3 position by adding new events from user transactions.
  *
- * Features:
+ * **Missing Events Flow:**
+ * This endpoint implements the "missing events" pattern for handling blockchain indexer lag:
+ * 1. Accept events from user transaction receipts (INCREASE/DECREASE/COLLECT)
+ * 2. Store events as "missing events" in position sync state
+ * 3. Trigger position refresh (which processes missing events via Layer 2 Step 0)
+ * 4. Return updated position with refreshed state
+ *
+ * **Why Missing Events?**
+ * When a user executes a transaction via the UI, the event may not be indexed by
+ * Etherscan yet. Storing it as a "missing event" ensures immediate position updates
+ * while the sync service handles deduplication when Etherscan eventually indexes it.
+ *
+ * **Features:**
  * - Validates ownership (returns 404 if position not found or not owned by user)
- * - Adds events to position ledger (events must come AFTER existing events)
- * - Refreshes position state with new financial calculations
+ * - Stores events as missing events in sync state (PostgreSQL)
+ * - Triggers position refresh (processes missing events immediately)
+ * - Handles duplicate events gracefully (sync deduplication)
  * - Returns fully populated position with updated PnL, fees, etc.
  *
- * Security:
+ * **Security:**
  * - Returns 404 for both "not found" and "not owned" to prevent information leakage
- * - Validates event ordering (blockNumber → txIndex → logIndex)
- * - Ensures all events come after existing events
+ * - Validates event data with Zod schemas (timestamps, amounts, addresses)
+ * - Validates event type requirements (liquidity for INCREASE/DECREASE, recipient for COLLECT)
  *
- * Use case:
- * - User creates a transaction on-chain (INCREASE_LIQUIDITY, DECREASE_LIQUIDITY, COLLECT)
- * - Frontend gets transaction receipt
- * - Frontend calls this endpoint with event data to update position in database
+ * **Use Case:**
+ * 1. User executes transaction on-chain (increase liquidity, collect fees, etc.)
+ * 2. Frontend waits for transaction confirmation
+ * 3. Frontend parses transaction receipt to extract events
+ * 4. Frontend calls this endpoint with event data
+ * 5. Backend stores as missing events and refreshes position
+ * 6. User sees updated position immediately (no waiting for Etherscan indexer)
  *
- * Path parameters:
+ * **Path Parameters:**
  * - chainId: Chain ID (1 = Ethereum, 42161 = Arbitrum, etc.)
- * - nftId: NFT token ID
+ * - nftId: NFT token ID (positive integer)
  *
- * Request body:
- * - events: Array of events to add (INCREASE_LIQUIDITY, DECREASE_LIQUIDITY, COLLECT)
+ * **Request Body:**
+ * - events: Array of events to add (1-100 events per request)
  *
- * Response:
- * - 200: Position updated successfully
+ * **Response:**
+ * - 200: Position updated successfully (with refreshed state)
  * - 404: Position not found or not owned by user
- * - 400: Validation error (invalid events, ordering, etc.)
- * - 500: Server error
+ * - 400: Validation error (invalid events, malformed data, etc.)
+ * - 500: Server error (sync failure, database error, etc.)
+ *
+ * **Example Request:**
+ * ```json
+ * {
+ *   "events": [{
+ *     "eventType": "INCREASE_LIQUIDITY",
+ *     "timestamp": "2025-01-20T15:30:00.000Z",
+ *     "blockNumber": "17550000",
+ *     "transactionIndex": 42,
+ *     "logIndex": 5,
+ *     "transactionHash": "0xabc...",
+ *     "liquidity": "1000000000000000000",
+ *     "amount0": "500000000",
+ *     "amount1": "250000000000000000"
+ *   }]
+ * }
+ * ```
  */
 export async function PATCH(
   req: NextRequest,
@@ -741,37 +775,12 @@ export async function PATCH(
         'Request body validated'
       );
 
-      // 3. Convert event data from API types to service types
-      const serviceEvents = events.map((event) => ({
-        eventType: event.eventType,
-        timestamp: new Date(event.timestamp),
-        blockNumber: BigInt(event.blockNumber),
-        transactionIndex: event.transactionIndex,
-        logIndex: event.logIndex,
-        transactionHash: event.transactionHash,
-        tokenId: BigInt(nftId),
-        liquidity: event.liquidity ? BigInt(event.liquidity) : undefined,
-        amount0: BigInt(event.amount0),
-        amount1: BigInt(event.amount1),
-        recipient: event.recipient,
-      }));
+      // 3. Find position by chainId and nftId
+      const positionHash = `uniswapv3/${chainId}/${nftId}`;
+      const dbPosition = await uniswapV3PositionService.findByPositionHash(user.id, positionHash);
 
-      apiLogger.info(
-        { requestId, userId: user.id, chainId, nftId, eventCount: events.length },
-        'Adding events to position'
-      );
-
-      // 4. Call service to update position
-      const updatedPosition =
-        await uniswapV3PositionService.updatePositionWithEvents(
-          user.id,
-          chainId,
-          nftId,
-          serviceEvents
-        );
-
-      // 5. Return 404 if position not found or not owned
-      if (!updatedPosition) {
+      // Return 404 if position not found or not owned
+      if (!dbPosition) {
         const errorResponse = createErrorResponse(
           ApiErrorCode.NOT_FOUND,
           'Position not found'
@@ -781,6 +790,48 @@ export async function PATCH(
           status: ErrorCodeToHttpStatus[ApiErrorCode.NOT_FOUND],
         });
       }
+
+      apiLogger.debug(
+        { requestId, userId: user.id, chainId, nftId, positionId: dbPosition.id },
+        'Position found and ownership verified'
+      );
+
+      // 4. Store events as missing events in sync state
+      // Load sync state
+      const syncState = await UniswapV3PositionSyncState.load(prisma, dbPosition.id);
+
+      // Convert API events to sync event format (UniswapV3SyncEventDB)
+      const missingEvents = events.map((event) => ({
+        eventType: event.eventType,
+        timestamp: event.timestamp, // Already ISO 8601 string
+        blockNumber: event.blockNumber, // Already string
+        transactionIndex: event.transactionIndex,
+        logIndex: event.logIndex,
+        transactionHash: event.transactionHash,
+        liquidity: event.liquidity,
+        amount0: event.amount0,
+        amount1: event.amount1,
+        recipient: event.recipient,
+      }));
+
+      // Add missing events to sync state
+      syncState.addMissingEvents(missingEvents);
+
+      // Save sync state
+      await syncState.save(prisma);
+
+      apiLogger.info(
+        { requestId, userId: user.id, chainId, nftId, positionId: dbPosition.id, eventCount: events.length },
+        'Missing events stored in sync state'
+      );
+
+      // 5. Refresh position (will process missing events via Layer 2 Step 0)
+      const updatedPosition = await uniswapV3PositionService.refresh(dbPosition.id);
+
+      apiLogger.info(
+        { requestId, userId: user.id, chainId, nftId, positionId: dbPosition.id },
+        'Position refreshed with missing events'
+      );
 
       apiLogger.info(
         {
