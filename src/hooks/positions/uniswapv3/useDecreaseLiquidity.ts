@@ -6,7 +6,7 @@ import {
   NONFUNGIBLE_POSITION_MANAGER_ABI,
 } from '@/config/contracts/nonfungible-position-manager';
 import { useUpdatePositionWithEvents } from './useUpdatePositionWithEvents';
-import { parsePositionEvents } from '@/utils/parsePositionEvents';
+import { parsePositionEvents } from '@/lib/uniswapv3/parse-position-events';
 
 export interface DecreaseLiquidityParams {
   tokenId: bigint;

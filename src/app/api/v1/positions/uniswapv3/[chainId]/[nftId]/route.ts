@@ -551,30 +551,8 @@ export async function PUT(
         }
       );
 
-      // 5. Store initial event as missing event (handles indexer lag)
-      const syncState = await UniswapV3PositionSyncState.load(prisma, position.id);
-
-      // Convert initial event to missing event format
-      const missingEvent = {
-        eventType: 'INCREASE_LIQUIDITY' as const,
-        timestamp: increaseEvent.timestamp,
-        blockNumber: increaseEvent.blockNumber,
-        transactionIndex: increaseEvent.transactionIndex,
-        logIndex: increaseEvent.logIndex,
-        transactionHash: increaseEvent.transactionHash,
-        liquidity: increaseEvent.liquidity,
-        amount0: increaseEvent.amount0,
-        amount1: increaseEvent.amount1,
-      };
-
-      syncState.addMissingEvent(missingEvent);
-      await syncState.save(prisma);
-
-      apiLogger.info(
-        { requestId, userId: user.id, chainId, nftId, positionId: position.id },
-        'Initial INCREASE_LIQUIDITY event stored as missing event'
-      );
-
+      // 5. Log position creation success
+      // Note: Missing event handling is now done inside createPositionFromUserData()
       apiLog.businessOperation(apiLogger, requestId, 'created', 'position', position.id, {
         chainId,
         nftId,

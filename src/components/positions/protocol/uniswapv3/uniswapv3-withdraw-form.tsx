@@ -12,7 +12,7 @@ import type { EvmChainSlug } from '@/config/chains';
 import { CHAIN_METADATA } from '@/config/chains';
 import { useDecreaseLiquidity } from '@/hooks/positions/uniswapv3/useDecreaseLiquidity';
 import { useUpdatePositionWithEvents } from '@/hooks/positions/uniswapv3/useUpdatePositionWithEvents';
-import { parseDecreaseLiquidityEvent, parseCollectEvent } from '@/lib/uniswapv3/parse-liquidity-events';
+import { parsePositionEvents } from '@/lib/uniswapv3/parse-position-events';
 import { NONFUNGIBLE_POSITION_MANAGER_ADDRESSES } from '@/config/contracts/nonfungible-position-manager';
 import { NetworkSwitchStep } from '@/components/positions/NetworkSwitchStep';
 import { TransactionStep } from '@/components/positions/TransactionStep';
@@ -319,19 +319,8 @@ export function UniswapV3WithdrawForm({
         return;
       }
 
-      // Parse both events from multicall receipt
-      const decreaseEvent = parseDecreaseLiquidityEvent(
-        decreaseLiquidity.receipt,
-        nftManagerAddress
-      );
-      const collectEvent = parseCollectEvent(
-        decreaseLiquidity.receipt,
-        nftManagerAddress
-      );
-
-      const events = [];
-      if (decreaseEvent) events.push(decreaseEvent);
-      if (collectEvent) events.push(collectEvent);
+      // Parse all events from multicall receipt (automatically extracts DECREASE_LIQUIDITY and COLLECT)
+      const events = parsePositionEvents(decreaseLiquidity.receipt);
 
       if (events.length > 0) {
         updateMutation.mutate({

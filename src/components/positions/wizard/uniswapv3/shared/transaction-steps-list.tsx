@@ -8,7 +8,7 @@ import { formatCompactValue } from '@/lib/fraction-format';
 import type { UseTokenApprovalResult } from '@/hooks/positions/uniswapv3/wizard/useTokenApproval';
 import type { UseMintPositionResult } from '@/hooks/positions/uniswapv3/wizard/useMintPosition';
 import { CHAIN_METADATA } from '@/config/chains';
-import { parseTransactionError } from '@/utils/parse-transaction-error';
+import { parseTransactionError } from '@/utils/parse-evm-transaction-error';
 
 interface PoolData {
   token0: {
