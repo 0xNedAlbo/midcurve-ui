@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { Plus, Minus, DollarSign } from "lucide-react";
 import type { ListPositionData } from "@midcurve/api-shared";
+import { IncreaseDepositModal } from "@/components/positions/increase-deposit-modal";
 import { WithdrawPositionModal } from "@/components/positions/withdraw-position-modal";
 import { CollectFeesModal } from "@/components/positions/collect-fees-modal";
 
@@ -16,6 +17,7 @@ interface UniswapV3ActionsProps {
 }
 
 export function UniswapV3Actions({ position }: UniswapV3ActionsProps) {
+  const [showIncreaseModal, setShowIncreaseModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [showCollectFeesModal, setShowCollectFeesModal] = useState(false);
   const hasUnclaimedFees = BigInt(position.unClaimedFees) > 0n;
@@ -24,7 +26,7 @@ export function UniswapV3Actions({ position }: UniswapV3ActionsProps) {
     <>
       <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-700/50">
         <button
-          onClick={() => console.log("Increase deposit clicked")}
+          onClick={() => setShowIncreaseModal(true)}
           className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors cursor-pointer ${
             position.isActive
               ? "text-green-300 bg-green-900/20 hover:bg-green-800/30 border-green-600/50"
@@ -62,6 +64,17 @@ export function UniswapV3Actions({ position }: UniswapV3ActionsProps) {
           Collect Fees
         </button>
       </div>
+
+      {/* Increase Deposit Modal */}
+      <IncreaseDepositModal
+        isOpen={showIncreaseModal}
+        onClose={() => setShowIncreaseModal(false)}
+        position={position}
+        onIncreaseSuccess={() => {
+          setShowIncreaseModal(false);
+          // Cache invalidation is handled by useUpdatePositionWithEvents
+        }}
+      />
 
       {/* Withdraw Modal */}
       <WithdrawPositionModal
