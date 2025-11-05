@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Plus, Minus, DollarSign } from "lucide-react";
 import type { ListPositionData } from "@midcurve/api-shared";
 import { WithdrawPositionModal } from "@/components/positions/withdraw-position-modal";
+import { CollectFeesModal } from "@/components/positions/collect-fees-modal";
 
 interface UniswapV3ActionsProps {
   position: ListPositionData;
@@ -16,6 +17,7 @@ interface UniswapV3ActionsProps {
 
 export function UniswapV3Actions({ position }: UniswapV3ActionsProps) {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [showCollectFeesModal, setShowCollectFeesModal] = useState(false);
   const hasUnclaimedFees = BigInt(position.unClaimedFees) > 0n;
 
   return (
@@ -48,10 +50,10 @@ export function UniswapV3Actions({ position }: UniswapV3ActionsProps) {
         </button>
 
         <button
-          onClick={() => console.log("Collect fees clicked")}
-          className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors cursor-pointer ${
+          onClick={() => setShowCollectFeesModal(true)}
+          className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors ${
             hasUnclaimedFees
-              ? "text-amber-300 bg-amber-900/20 hover:bg-amber-800/30 border-amber-600/50"
+              ? "text-amber-300 bg-amber-900/20 hover:bg-amber-800/30 border-amber-600/50 cursor-pointer"
               : "text-slate-500 bg-slate-800/30 border-slate-600/30 cursor-not-allowed"
           }`}
           disabled={!hasUnclaimedFees}
@@ -68,6 +70,17 @@ export function UniswapV3Actions({ position }: UniswapV3ActionsProps) {
         position={position}
         onWithdrawSuccess={() => {
           setShowWithdrawModal(false);
+          // Cache invalidation is handled by useUpdatePositionWithEvents
+        }}
+      />
+
+      {/* Collect Fees Modal */}
+      <CollectFeesModal
+        isOpen={showCollectFeesModal}
+        onClose={() => setShowCollectFeesModal(false)}
+        position={position}
+        onCollectSuccess={() => {
+          setShowCollectFeesModal(false);
           // Cache invalidation is handled by useUpdatePositionWithEvents
         }}
       />
