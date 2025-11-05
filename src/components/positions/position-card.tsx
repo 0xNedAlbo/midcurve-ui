@@ -89,6 +89,7 @@ export function PositionCard({ position }: PositionCardProps) {
         {/* MIDDLE: Metrics (protocol-agnostic) - grouped with consistent gaps */}
         <PositionCardMetrics
           currentValue={position.currentValue}
+          realizedPnl={position.realizedPnl}
           unrealizedPnl={position.unrealizedPnl}
           unClaimedFees={position.unClaimedFees}
           currentCostBasis={position.currentCostBasis}

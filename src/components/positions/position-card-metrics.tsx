@@ -15,6 +15,7 @@ interface Token {
 
 interface PositionCardMetricsProps {
   currentValue: string; // BigInt as string (quote token units)
+  realizedPnl: string; // BigInt as string (quote token units)
   unrealizedPnl: string; // BigInt as string (quote token units)
   unClaimedFees: string; // BigInt as string (quote token units)
   currentCostBasis: string; // BigInt as string (quote token units)
@@ -28,6 +29,7 @@ interface PositionCardMetricsProps {
 
 export function PositionCardMetrics({
   currentValue,
+  realizedPnl,
   unrealizedPnl,
   unClaimedFees,
   currentCostBasis,
@@ -38,9 +40,12 @@ export function PositionCardMetrics({
   isInRange,
   pnlCurveSlot,
 }: PositionCardMetricsProps) {
+  // Calculate total PnL (realized + unrealized)
+  const totalPnl = (BigInt(realizedPnl) + BigInt(unrealizedPnl)).toString();
+
   // Format display values
   const formattedValue = formatCurrency(currentValue, quoteToken.decimals);
-  const pnlFormatted = formatPnL(unrealizedPnl, quoteToken.decimals);
+  const pnlFormatted = formatPnL(totalPnl, quoteToken.decimals);
   const formattedFees = formatCurrency(unClaimedFees, quoteToken.decimals);
 
   // Calculate APR
@@ -53,7 +58,7 @@ export function PositionCardMetrics({
     decimals: quoteToken.decimals,
   });
 
-  const pnlBigInt = BigInt(unrealizedPnl);
+  const pnlBigInt = BigInt(totalPnl);
 
   return (
     <div className="flex items-center gap-1 md:gap-2 lg:gap-3 xl:gap-4">
