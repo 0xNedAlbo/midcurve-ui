@@ -16,6 +16,8 @@ import { parsePositionEvents } from '@/lib/uniswapv3/parse-position-events';
 import { NONFUNGIBLE_POSITION_MANAGER_ADDRESSES } from '@/config/contracts/nonfungible-position-manager';
 import { NetworkSwitchStep } from '@/components/positions/NetworkSwitchStep';
 import { TransactionStep } from '@/components/positions/TransactionStep';
+import { EvmWalletConnectionPrompt } from '@/components/common/EvmWalletConnectionPrompt';
+import { EvmAccountSwitchPrompt } from '@/components/common/EvmAccountSwitchPrompt';
 import { apiClient } from '@/lib/api-client';
 
 interface UniswapV3WithdrawFormProps {
@@ -55,7 +57,7 @@ export function UniswapV3WithdrawForm({
 
   // Type assertion for config (we know it's Uniswap V3)
   const config = position.config as { chainId: number; nftId: number; tickLower: number; tickUpper: number };
-  const state = position.state as { liquidity: string };
+  const state = position.state as { liquidity: string; ownerAddress: string };
   const poolState = position.pool.state as { sqrtPriceX96: string };
   const poolConfig = position.pool.config as { chainId: number };
 
@@ -89,6 +91,14 @@ export function UniswapV3WithdrawForm({
   const isWrongNetwork = !!(
     isConnected &&
     connectedChainId !== chainConfig.chainId
+  );
+
+  // Check if connected wallet is the position owner
+  const isWrongAccount = !!(
+    isConnected &&
+    walletAddress &&
+    state.ownerAddress &&
+    walletAddress.toLowerCase() !== state.ownerAddress.toLowerCase()
   );
 
   // Token info for display
@@ -347,7 +357,8 @@ export function UniswapV3WithdrawForm({
     withdrawPercent > 0 &&
     withdrawPercent <= 100 &&
     isConnected &&
-    !isWrongNetwork;
+    !isWrongNetwork &&
+    !isWrongAccount;
 
   return (
     <div className="space-y-6">
@@ -422,12 +433,25 @@ export function UniswapV3WithdrawForm({
         </div>
       </div>
 
+      {/* Wallet Connection Section */}
+      {!isConnected && <EvmWalletConnectionPrompt />}
+
+      {/* Account Switch Section */}
+      {isConnected && isWrongAccount && state.ownerAddress && (
+        <EvmAccountSwitchPrompt>
+          <p className="text-sm text-slate-400">
+            Position Owner: {state.ownerAddress.slice(0, 6)}...{state.ownerAddress.slice(-4)}
+          </p>
+        </EvmAccountSwitchPrompt>
+      )}
+
       {/* Transaction Steps */}
-      <div
-        className={`bg-slate-800/50 backdrop-blur-md border border-slate-700/50 rounded-lg p-4 ${
-          withdrawPercent === 0 ? 'opacity-50' : ''
-        }`}
-      >
+      {isConnected && !isWrongAccount && (
+        <div
+          className={`bg-slate-800/50 backdrop-blur-md border border-slate-700/50 rounded-lg p-4 ${
+            withdrawPercent === 0 ? 'opacity-50' : ''
+          }`}
+        >
         <h3 className="text-lg font-semibold text-white mb-4">Transaction</h3>
         <div className="space-y-3">
           {/* Network Switch Step */}
@@ -462,7 +486,8 @@ export function UniswapV3WithdrawForm({
             </div>
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Success Close Button */}
       {decreaseLiquidity.isSuccess && (
