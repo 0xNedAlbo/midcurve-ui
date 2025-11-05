@@ -259,6 +259,12 @@ export function UniswapV3WithdrawForm({
     decreaseLiquidity.reset();
   }, []); // Only run once on mount
 
+  // Auto-refresh pool price when modal opens
+  useEffect(() => {
+    handleRefreshPool();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
   // Handle percentage slider change
   const handlePercentChange = useCallback(
     (percent: number) => {
