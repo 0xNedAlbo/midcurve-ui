@@ -10,6 +10,7 @@ import { UniswapV3ActionsTab } from "./uniswapv3-actions-tab";
 import { UniswapV3HistoryTab } from "./uniswapv3-history-tab";
 import { UniswapV3TechnicalTab } from "./uniswapv3-technical-tab";
 import { getChainMetadataByChainId } from "@/config/chains";
+import { getNonfungiblePositionManagerAddress } from "@/config/contracts/nonfungible-position-manager";
 
 interface UniswapV3PositionDetailProps {
   position: GetUniswapV3PositionResponse;
@@ -36,6 +37,9 @@ export function UniswapV3PositionDetail({ position, onRefresh, isRefreshing }: U
   const isInRange = poolState.currentTick >= config.tickLower && poolState.currentTick <= config.tickUpper;
   const status = BigInt(positionState.liquidity) > 0n ? "active" : "closed";
 
+  // Get NFPM address for explorer link
+  const nftManagerAddress = getNonfungiblePositionManagerAddress(config.chainId);
+
   // Wrap onRefresh to ensure it returns Promise<void>
   const handleRefresh = async () => {
     if (onRefresh) {
@@ -60,9 +64,9 @@ export function UniswapV3PositionDetail({ position, onRefresh, isRefreshing }: U
         protocol={position.protocol}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing || false}
-        feeTierDisplay={<span>{(config as any).feeTier / 10000}%</span>}
+        feeTierDisplay={<span>{(position.pool.feeBps / 10000).toFixed(2)}%</span>}
         identifierDisplay={<span>#{config.nftId}</span>}
-        explorerUrl={`${chainMetadata?.explorer}/nft/${(position.config as any).nftManagerAddress}/${config.nftId}`}
+        explorerUrl={nftManagerAddress ? `${chainMetadata?.explorer}/token/${nftManagerAddress}?a=${config.nftId}` : undefined}
         explorerLabel="NFT"
         updatedAt={position.updatedAt}
       />

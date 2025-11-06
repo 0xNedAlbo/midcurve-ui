@@ -24,17 +24,17 @@ const tabs = [
   {
     id: "history",
     icon: Clock,
-    label: "History",
+    label: "PnL Analysis",
   },
   {
     id: "actions",
     icon: TrendingUp,
-    label: "Actions",
+    label: "APR Analysis",
   },
   {
     id: "technical",
     icon: Settings,
-    label: "Technical",
+    label: "Technical Details",
   },
 ];
 

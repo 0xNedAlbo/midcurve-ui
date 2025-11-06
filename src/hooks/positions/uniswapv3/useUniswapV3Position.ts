@@ -23,6 +23,7 @@ export function useUniswapV3Position(
       );
     },
     staleTime: 60_000, // 1 minute (position details change less frequently)
+    refetchInterval: 60_000, // Auto-refresh every 60 seconds
     ...options,
   });
 }

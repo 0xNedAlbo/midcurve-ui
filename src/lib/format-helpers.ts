@@ -213,3 +213,19 @@ export function formatUSDValue(usdString?: string): string {
   // Less than 1K
   return `$${usdNum.toFixed(2)}`;
 }
+
+/**
+ * Formats protocol name for display
+ * @param protocol - Protocol identifier (e.g., "uniswapv3", "orca")
+ * @returns Human-readable protocol name (e.g., "Uniswap V3", "Orca")
+ */
+export function formatProtocolName(protocol: string): string {
+  const protocolNames: Record<string, string> = {
+    uniswapv3: 'Uniswap V3',
+    // Future protocols:
+    // orca: 'Orca',
+    // raydium: 'Raydium',
+    // pancakeswapv3: 'PancakeSwap V3',
+  };
+  return protocolNames[protocol] || protocol;
+}

@@ -7,6 +7,7 @@
  */
 
 import Image from "next/image";
+import { formatProtocolName } from "@/lib/format-helpers";
 
 interface Token {
   symbol: string;
@@ -78,7 +79,7 @@ export function PositionCardHeader({
 
           {/* Protocol Name and Protocol-specific badges for third line */}
           <div className="text-xs md:text-sm text-slate-400 flex items-center gap-1 md:gap-2 flex-wrap mt-0.5">
-            <span className="capitalize">{protocol}</span>
+            <span>{formatProtocolName(protocol)}</span>
             {protocolLineBadges}
           </div>
         </div>

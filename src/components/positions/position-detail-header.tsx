@@ -16,6 +16,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, RefreshCw, Copy, ExternalLink } from "lucide-react";
+import { formatProtocolName } from "@/lib/format-helpers";
 
 interface PositionDetailHeaderProps {
   // Token information
@@ -184,7 +185,7 @@ export function PositionDetailHeader({
                 </span>
 
                 {/* Protocol */}
-                <span className="capitalize">{protocol}</span>
+                <span>{formatProtocolName(protocol)}</span>
 
                 {/* Fee Tier (if provided) */}
                 {feeTierDisplay && (
