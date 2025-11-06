@@ -84,7 +84,18 @@ export async function apiClient<TResponse>(
       );
     }
 
-    return data;
+    // Handle different response patterns:
+    // 1. Paginated responses: { success, data: [...], pagination, meta }
+    //    → Return entire response (already in correct shape)
+    // 2. Single resource: { success, data: {...} }
+    //    → Extract data field
+    if ('pagination' in data) {
+      // Paginated response - return as-is
+      return data as TResponse;
+    }
+
+    // Single resource response - extract data field
+    return data.data as TResponse;
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;

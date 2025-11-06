@@ -57,7 +57,7 @@ export function useUpdatePositionWithEvents(
       );
     },
 
-    onSuccess: (response, variables, context) => {
+    onSuccess: async (response) => {
       const updatedPosition = response.data;
 
       // Strategy 1: Optimistically update position in ALL list queries
@@ -90,9 +90,6 @@ export function useUpdatePositionWithEvents(
       queryClient.invalidateQueries({
         queryKey: queryKeys.positions.lists(),
       });
-
-      // Call user's onSuccess if provided
-      options?.onSuccess?.(response, variables, context);
     },
   });
 }

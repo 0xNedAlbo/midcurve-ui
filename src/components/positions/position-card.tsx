@@ -15,6 +15,7 @@ import { PositionActionsMenu } from "./position-actions-menu";
 import { DeletePositionModal } from "./delete-position-modal";
 import { useIsDeletingPosition } from "@/hooks/positions/useDeletePosition";
 import { useRefreshPosition } from "@/hooks/positions/useRefreshPosition";
+import { getChainSlugByChainId } from "@/config/chains";
 
 interface PositionCardProps {
   position: ListPositionData;
@@ -130,7 +131,7 @@ export function PositionCard({ position, listIndex }: PositionCardProps) {
         {/* RIGHT: Common Actions - pushed to the right with ml-auto */}
         <div className="flex items-center gap-1 md:gap-2 ml-auto">
           <Link
-            href={`/position/${position.protocol}/${getPositionPath(position)}`}
+            href={`/positions/${position.protocol}/${getPositionPath(position)}`}
             className="p-1.5 md:p-2 hover:bg-slate-700/50 rounded-lg transition-colors cursor-pointer"
             title="View Details"
           >
@@ -205,7 +206,12 @@ function getPositionPath(position: ListPositionData): string {
         chainId: number;
         nftId: number;
       };
-      return `${config.chainId}/${config.nftId}`;
+      const chainSlug = getChainSlugByChainId(config.chainId);
+      if (!chainSlug) {
+        console.warn(`Unknown chainId: ${config.chainId}`);
+        return position.id;
+      }
+      return `${chainSlug}/${config.nftId}`;
     }
     // Future: Add Orca, other protocols
     default:

@@ -20,6 +20,12 @@ interface UniswapV3MiniPnLCurveProps {
   position: ListPositionData;
   width?: number;
   height?: number;
+  /**
+   * Optional tick override for hypothetical price scenarios.
+   * When provided, the current price marker will be shown at this tick
+   * instead of the actual pool's current tick.
+   */
+  overrideTick?: number;
 }
 
 interface CurvePoint {
@@ -32,6 +38,7 @@ export function UniswapV3MiniPnLCurve({
   position,
   width = 120,
   height = 60,
+  overrideTick,
 }: UniswapV3MiniPnLCurveProps) {
   // Extract Uniswap V3 specific data from position
   const curveData = useMemo(() => {
@@ -124,10 +131,11 @@ export function UniswapV3MiniPnLCurve({
         phase: point.phase,
       }));
 
-      // Find current price index using current tick
-      // Convert current tick to price for marker placement
+      // Find current price index using current tick (or override tick for hypothetical scenarios)
+      // Convert tick to price for marker placement
+      const tickForMarker = overrideTick !== undefined ? overrideTick : poolState.currentTick;
       const currentPriceBigInt = tickToPrice(
-        poolState.currentTick,
+        tickForMarker,
         baseTokenConfig.address,
         quoteTokenConfig.address,
         Number(baseToken.decimals)

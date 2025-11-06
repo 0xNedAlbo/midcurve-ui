@@ -1,0 +1,82 @@
+"use client";
+
+import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import type { GetUniswapV3PositionResponse } from "@midcurve/api-shared";
+import { PositionDetailHeader } from "../../position-detail-header";
+import { PositionDetailTabs } from "../../position-detail-tabs";
+import { UniswapV3OverviewTab } from "./uniswapv3-overview-tab";
+import { UniswapV3ActionsTab } from "./uniswapv3-actions-tab";
+import { UniswapV3HistoryTab } from "./uniswapv3-history-tab";
+import { UniswapV3TechnicalTab } from "./uniswapv3-technical-tab";
+import { getChainMetadataByChainId } from "@/config/chains";
+
+interface UniswapV3PositionDetailProps {
+  position: GetUniswapV3PositionResponse;
+}
+
+export type TabType = "overview" | "actions" | "history" | "technical";
+
+export function UniswapV3PositionDetail({ position }: UniswapV3PositionDetailProps) {
+  const searchParams = useSearchParams();
+
+  // Get tab from URL query params, default to 'overview'
+  const tabFromUrl = (searchParams.get("tab") || "overview") as TabType;
+  const [activeTab] = useState<TabType>(tabFromUrl);
+
+  // Extract chain ID and NFT ID for header
+  const config = position.config as { chainId: number; nftId: number; tickLower: number; tickUpper: number };
+  const poolState = position.pool.state as { currentTick: number };
+  const positionState = position.state as { liquidity: string };
+  const chainMetadata = getChainMetadataByChainId(config.chainId);
+
+  // Compute derived fields
+  const isInRange = poolState.currentTick >= config.tickLower && poolState.currentTick <= config.tickUpper;
+  const status = BigInt(positionState.liquidity) > 0n ? "active" : "closed";
+
+  // Refresh handler (stub for now)
+  const handleRefresh = async () => {
+    // TODO: Implement refresh logic
+    console.log("Refresh position");
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <PositionDetailHeader
+        token0Symbol={position.pool.token0.symbol}
+        token1Symbol={position.pool.token1.symbol}
+        token0LogoUrl={position.pool.token0.logoUrl || undefined}
+        token1LogoUrl={position.pool.token1.logoUrl || undefined}
+        status={status}
+        isInRange={isInRange}
+        chainMetadata={{
+          shortName: chainMetadata?.shortName || "Unknown",
+          explorer: chainMetadata?.explorer || "",
+        }}
+        protocol={position.protocol}
+        onRefresh={handleRefresh}
+        isRefreshing={false}
+        feeTierDisplay={<span>{(config as any).feeTier / 10000}%</span>}
+        identifierDisplay={<span>#{config.nftId}</span>}
+        explorerUrl={`${chainMetadata?.explorer}/nft/${(position.config as any).nftManagerAddress}/${config.nftId}`}
+        explorerLabel="NFT"
+        updatedAt={position.updatedAt}
+      />
+
+      {/* Tabs Navigation */}
+      <PositionDetailTabs
+        activeTab={activeTab}
+        basePath={`/positions/uniswapv3/${config.chainId}/${config.nftId}`}
+      />
+
+      {/* Tab Content */}
+      <div className="mt-6">
+        {activeTab === "overview" && <UniswapV3OverviewTab position={position} />}
+        {activeTab === "actions" && <UniswapV3ActionsTab position={position} />}
+        {activeTab === "history" && <UniswapV3HistoryTab position={position} />}
+        {activeTab === "technical" && <UniswapV3TechnicalTab position={position} />}
+      </div>
+    </div>
+  );
+}

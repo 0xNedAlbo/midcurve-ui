@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
+import { apiClient } from "@/lib/api-client";
 import type { GetUniswapV3PositionResponse } from "@midcurve/api-shared";
 
 interface RefreshPositionParams {
@@ -46,22 +47,8 @@ export function useRefreshPosition() {
           throw new Error(`Unsupported protocol: ${protocol}`);
       }
 
-      const response = await fetch(endpoint, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({
-          error: { message: "Failed to refresh position" },
-        }));
-        throw new Error(error.error?.message || "Failed to refresh position");
-      }
-
-      const data = await response.json();
-      return data as GetUniswapV3PositionResponse;
+      // Use apiClient to handle response structure correctly
+      return await apiClient<GetUniswapV3PositionResponse>(endpoint);
     },
     onSuccess: async (data, variables) => {
       // Invalidate the positions list to ensure UI consistency
