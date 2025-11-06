@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { RefreshCw, Search } from "lucide-react";
 import type { ListPositionData } from "@midcurve/api-shared";
@@ -18,9 +18,10 @@ import { useRefreshPosition } from "@/hooks/positions/useRefreshPosition";
 
 interface PositionCardProps {
   position: ListPositionData;
+  listIndex: number;
 }
 
-export function PositionCard({ position }: PositionCardProps) {
+export function PositionCard({ position, listIndex }: PositionCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Check if this specific position is being deleted
@@ -61,6 +62,27 @@ export function PositionCard({ position }: PositionCardProps) {
         console.warn(`Refresh not implemented for protocol: ${position.protocol}`);
     }
   };
+
+  // Auto-refresh timer: Load once on mount + every 60s
+  useEffect(() => {
+    // Initial load with calculated delay based on list position (listIndex * 2 seconds)
+    const initialDelay = listIndex * 2000;
+    const initialTimer = setTimeout(() => {
+      handleRefresh();
+    }, initialDelay);
+
+    // Recurring refresh every 60s (no additional delay)
+    const recurringTimer = setInterval(() => {
+      handleRefresh();
+    }, 60000);
+
+    // Cleanup on unmount
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(recurringTimer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [position.id]); // Only re-run if position.id changes
 
   return (
     <div className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-sm border border-slate-700/50 rounded-xl p-3 md:p-4 lg:p-6 hover:border-slate-600/50 transition-all duration-200">

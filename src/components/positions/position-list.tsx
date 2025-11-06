@@ -270,10 +270,11 @@ export function PositionList({ className }: PositionListProps) {
       {!error && filteredPositions.length > 0 && (
         <>
           <div className="grid grid-cols-1 gap-4">
-            {filteredPositions.map((position) => (
+            {filteredPositions.map((position, index) => (
               <PositionCard
                 key={position.id}
                 position={position}
+                listIndex={index}
               />
             ))}
           </div>
