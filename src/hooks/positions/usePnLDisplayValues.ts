@@ -48,12 +48,14 @@ export function usePnLDisplayValues(
     }
 
     // Calculate total PnL including fees
-    // Total PnL = Realized PnL + Collected Fees + Unclaimed Fees + (Current Value - Current Cost Basis)
+    // Total PnL = realizedPnL + unrealizedPnL + unclaimedFees + collectedFees
+    // Where unrealizedPnL = currentValue - currentCostBasis
+    const unrealizedPnL = BigInt(pnlData.currentValue) - BigInt(pnlData.currentCostBasis);
     const totalPnL =
       BigInt(pnlData.realizedPnL) +
-      BigInt(pnlData.collectedFees) +
+      unrealizedPnL +
       BigInt(pnlData.unclaimedFees) +
-      (BigInt(pnlData.currentValue) - BigInt(pnlData.currentCostBasis));
+      BigInt(pnlData.collectedFees);
 
     const isPositive = totalPnL > 0n;
     const isNegative = totalPnL < 0n;

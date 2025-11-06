@@ -18,6 +18,7 @@ interface PositionCardMetricsProps {
   realizedPnl: string; // BigInt as string (quote token units)
   unrealizedPnl: string; // BigInt as string (quote token units)
   unClaimedFees: string; // BigInt as string (quote token units)
+  collectedFees: string; // BigInt as string (quote token units)
   currentCostBasis: string; // BigInt as string (quote token units)
   lastFeesCollectedAt: string | null; // ISO timestamp or null
   positionOpenedAt: string; // ISO timestamp
@@ -32,6 +33,7 @@ export function PositionCardMetrics({
   realizedPnl,
   unrealizedPnl,
   unClaimedFees,
+  collectedFees,
   currentCostBasis,
   lastFeesCollectedAt,
   positionOpenedAt,
@@ -40,8 +42,10 @@ export function PositionCardMetrics({
   isInRange,
   pnlCurveSlot,
 }: PositionCardMetricsProps) {
-  // Calculate total PnL (realized + unrealized)
-  const totalPnl = (BigInt(realizedPnl) + BigInt(unrealizedPnl)).toString();
+  // Calculate total PnL: realizedPnl + unrealizedPnl + unclaimedFees + collectedFees
+  const totalPnl = (
+    BigInt(realizedPnl) + BigInt(unrealizedPnl) + BigInt(unClaimedFees) + BigInt(collectedFees)
+  ).toString();
 
   // Format display values
   const formattedValue = formatCurrency(currentValue, quoteToken.decimals);

@@ -134,21 +134,19 @@ function calculatePositionStateAtTick(
   const unclaimedFees = pnlBreakdown ? BigInt(pnlBreakdown.unclaimedFees) : 0n;
 
   // Calculate PnL including and excluding fees
+  // unrealizedPnL = positionValue - costBasis
+  const unrealizedPnL = positionValue - currentCostBasis;
+
   // For current tick, use unclaimed fees; for other ticks, fees would be 0
   const unclaimedFeesAtTick =
     tick === position.pool.state.currentTick ? unclaimedFees : 0n;
 
-  // PnL Including Fees = (Position Value + Unclaimed Fees) - Current Cost Basis + Realized PnL + Collected Fees
+  // PnL Including Fees = realizedPnL + unrealizedPnL + unclaimedFees + collectedFees
   const pnlIncludingFees =
-    positionValue +
-    unclaimedFeesAtTick -
-    currentCostBasis +
-    realizedPnL +
-    collectedFees;
+    realizedPnL + unrealizedPnL + unclaimedFeesAtTick + collectedFees;
 
-  // PnL Excluding Fees = Position Value - Current Cost Basis + Realized PnL + Collected Fees
-  const pnlExcludingFees =
-    positionValue - currentCostBasis + realizedPnL + collectedFees;
+  // PnL Excluding Fees = realizedPnL + unrealizedPnL + collectedFees
+  const pnlExcludingFees = realizedPnL + unrealizedPnL + collectedFees;
 
   return {
     baseTokenAmount,

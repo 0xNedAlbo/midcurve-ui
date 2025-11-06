@@ -115,6 +115,7 @@ export function PositionCard({ position, listIndex }: PositionCardProps) {
           realizedPnl={position.realizedPnl}
           unrealizedPnl={position.unrealizedPnl}
           unClaimedFees={position.unClaimedFees}
+          collectedFees={position.collectedFees}
           currentCostBasis={position.currentCostBasis}
           lastFeesCollectedAt={position.lastFeesCollectedAt}
           positionOpenedAt={position.positionOpenedAt}

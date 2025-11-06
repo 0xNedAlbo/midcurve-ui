@@ -13,11 +13,13 @@ import { getChainMetadataByChainId } from "@/config/chains";
 
 interface UniswapV3PositionDetailProps {
   position: GetUniswapV3PositionResponse;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export type TabType = "overview" | "actions" | "history" | "technical";
 
-export function UniswapV3PositionDetail({ position }: UniswapV3PositionDetailProps) {
+export function UniswapV3PositionDetail({ position, onRefresh, isRefreshing }: UniswapV3PositionDetailProps) {
   const searchParams = useSearchParams();
 
   // Get tab from URL query params, default to 'overview'
@@ -34,10 +36,11 @@ export function UniswapV3PositionDetail({ position }: UniswapV3PositionDetailPro
   const isInRange = poolState.currentTick >= config.tickLower && poolState.currentTick <= config.tickUpper;
   const status = BigInt(positionState.liquidity) > 0n ? "active" : "closed";
 
-  // Refresh handler (stub for now)
+  // Wrap onRefresh to ensure it returns Promise<void>
   const handleRefresh = async () => {
-    // TODO: Implement refresh logic
-    console.log("Refresh position");
+    if (onRefresh) {
+      await onRefresh();
+    }
   };
 
   return (
@@ -56,7 +59,7 @@ export function UniswapV3PositionDetail({ position }: UniswapV3PositionDetailPro
         }}
         protocol={position.protocol}
         onRefresh={handleRefresh}
-        isRefreshing={false}
+        isRefreshing={isRefreshing || false}
         feeTierDisplay={<span>{(config as any).feeTier / 10000}%</span>}
         identifierDisplay={<span>#{config.nftId}</span>}
         explorerUrl={`${chainMetadata?.explorer}/nft/${(position.config as any).nftManagerAddress}/${config.nftId}`}

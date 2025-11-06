@@ -118,8 +118,8 @@ export default function PositionDetailPage() {
     }
   }, [position, isFetching, refetch]);
 
-  // Loading state - check for actual loading or incomplete data
-  if (isLoading || isFetching || (position && !position.protocol)) {
+  // Loading state - check for initial loading or incomplete data (exclude isFetching to allow background refresh)
+  if (isLoading || (position && !position.protocol)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
         <div className="max-w-[1600px] mx-auto px-2 md:px-4 lg:px-6 py-8">
@@ -187,7 +187,11 @@ export default function PositionDetailPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
       <div className="max-w-[1600px] mx-auto px-2 md:px-4 lg:px-6 py-8">
-        <PositionDetailLayout position={position} />
+        <PositionDetailLayout
+          position={position}
+          onRefresh={refetch}
+          isRefreshing={isFetching}
+        />
       </div>
     </div>
   );
