@@ -271,9 +271,9 @@ export function UniswapV3IncreaseDepositForm({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Position Size Configuration */}
-      <div>
+      <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 rounded-lg p-4">
         <PositionSizeConfig
           pool={currentPool}
           baseToken={baseToken as unknown as Erc20Token}
@@ -293,7 +293,9 @@ export function UniswapV3IncreaseDepositForm({
       <NetworkSwitchStep chain={chain} isWrongNetwork={isWrongNetwork} />
 
       {/* Transaction Steps */}
-      <div className="space-y-3">
+      <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 rounded-lg p-4">
+        <h3 className="text-lg font-semibold text-white mb-4">Transaction</h3>
+        <div className="space-y-3">
 
         {/* Base Token Approval */}
         {requiredAmounts.baseAmount > 0n && (
@@ -371,6 +373,7 @@ export function UniswapV3IncreaseDepositForm({
             showExecute={false}
           />
         )}
+        </div>
       </div>
 
       {/* Approval Errors */}

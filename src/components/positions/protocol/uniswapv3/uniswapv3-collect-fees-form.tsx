@@ -206,7 +206,7 @@ export function UniswapV3CollectFeesForm({
     unclaimedFees > 0n;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Fee Preview Section - Matching PositionSizeConfig header layout */}
       <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 rounded-lg p-4">
         <div className="space-y-3">

@@ -78,7 +78,7 @@ export function WithdrawPositionModal({
                 Withdraw Liquidity
               </h2>
               <p className="text-sm text-slate-400 mt-1">
-                Remove capital from your {position.pool.token0.symbol}/
+                Remove liquidity from your {position.pool.token0.symbol}/
                 {position.pool.token1.symbol} position
               </p>
             </div>

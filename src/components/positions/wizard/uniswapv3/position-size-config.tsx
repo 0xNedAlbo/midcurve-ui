@@ -258,7 +258,7 @@ export function PositionSizeConfig({
     <div className="space-y-3">
       {/* Header with Position Size display */}
       <div className="flex items-center justify-between text-sm">
-        <span className="text-slate-300 font-medium">{label}</span>
+        <span className="text-white font-medium">{label}</span>
         <div className="flex items-center gap-2">
           {onRefreshPool && (
             <button
