@@ -38,6 +38,8 @@ export interface UseCollectFeesResult {
 /**
  * Hook for collecting fees from a Uniswap V3 position
  *
+ * @param params - Collection parameters (can be null if wallet not connected or no fees)
+ *
  * @example
  * const { collect, isCollecting, isSuccess, collectedAmount0, collectedAmount1 } = useCollectFees({
  *   tokenId: 123456n,
@@ -46,7 +48,7 @@ export interface UseCollectFeesResult {
  * });
  */
 export function useCollectFees(
-  params: CollectFeesParams
+  params: CollectFeesParams | null
 ): UseCollectFeesResult {
   const [collectedAmount0, setCollectedAmount0] = useState<bigint | undefined>(
     undefined
@@ -75,10 +77,11 @@ export function useCollectFees(
     hash: collectTxHash,
   });
 
-  const managerAddress =
-    NONFUNGIBLE_POSITION_MANAGER_ADDRESSES[
-      params.chainId as keyof typeof NONFUNGIBLE_POSITION_MANAGER_ADDRESSES
-    ];
+  const managerAddress = params
+    ? NONFUNGIBLE_POSITION_MANAGER_ADDRESSES[
+        params.chainId as keyof typeof NONFUNGIBLE_POSITION_MANAGER_ADDRESSES
+      ]
+    : undefined;
 
   // Parse collected amounts from transaction receipt
   useEffect(() => {
@@ -108,6 +111,11 @@ export function useCollectFees(
   }, [isSuccess, receipt, managerAddress]);
 
   const collect = () => {
+    if (!params) {
+      console.error("Cannot collect fees: params is null (wallet not connected or no fees)");
+      return;
+    }
+
     if (!managerAddress) {
       console.error(
         `NonfungiblePositionManager address not found for chain ${params.chainId}`
