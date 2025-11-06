@@ -5,7 +5,7 @@
  * Works for all protocols (Uniswap V3, Orca, etc.)
  */
 
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock } from "lucide-react";
 import { formatCurrency, formatPnL, formatPercentage, calculateAPR } from "@/lib/format-helpers";
 
 interface Token {
@@ -49,7 +49,7 @@ export function PositionCardMetrics({
   const formattedFees = formatCurrency(unClaimedFees, quoteToken.decimals);
 
   // Calculate APR
-  const apr = calculateAPR({
+  const { apr, belowThreshold } = calculateAPR({
     costBasis: currentCostBasis,
     unClaimedFees,
     lastFeesCollectedAt,
@@ -116,8 +116,15 @@ export function PositionCardMetrics({
       {/* APR */}
       <div className="text-right min-w-[60px] md:min-w-[70px] lg:min-w-[80px]">
         <div className="text-[10px] md:text-xs text-slate-400 mb-1">est. APR</div>
-        <div className="text-sm md:text-base font-semibold text-white">
-          {formatPercentage(apr, 2)}
+        <div className="text-sm md:text-base font-semibold">
+          {belowThreshold ? (
+            <div className="flex items-center justify-end gap-1 text-slate-500" title="APR calculation requires at least 5 minutes of position history">
+              <span>-</span>
+              <Clock className="w-3 h-3" />
+            </div>
+          ) : (
+            <span className="text-white">{formatPercentage(apr, 2)}</span>
+          )}
         </div>
       </div>
     </div>

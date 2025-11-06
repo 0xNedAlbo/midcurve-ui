@@ -88,7 +88,7 @@ export function formatPercentage(value: number, decimals: number = 1): string {
  * - If lastFeesCollectedAt is null: uses positionOpenedAt
  *
  * @param params - Position data for APR calculation
- * @returns APR as percentage (e.g., 24.5 for 24.5%)
+ * @returns Object with APR percentage and threshold status
  */
 export function calculateAPR(params: {
   costBasis: string; // BigInt as string (quote token units)
@@ -97,7 +97,7 @@ export function calculateAPR(params: {
   positionOpenedAt: string; // ISO timestamp
   isInRange: boolean; // Whether position is currently in range
   decimals?: number; // Token decimals (default 18)
-}): number {
+}): { apr: number; belowThreshold: boolean } {
   const {
     costBasis,
     unClaimedFees,
@@ -109,7 +109,7 @@ export function calculateAPR(params: {
 
   // Out of range positions don't earn fees
   if (!isInRange) {
-    return 0;
+    return { apr: 0, belowThreshold: false };
   }
 
   const costBasisBigInt = BigInt(costBasis);
@@ -117,7 +117,7 @@ export function calculateAPR(params: {
 
   // Can't calculate APR with zero cost basis
   if (costBasisBigInt === 0n) {
-    return 0;
+    return { apr: 0, belowThreshold: false };
   }
 
   // Calculate time elapsed since last collection (or position opened)
@@ -130,8 +130,9 @@ export function calculateAPR(params: {
   // Need at least 5 minutes of data for meaningful APR
   // This prevents wild swings in the first few minutes but allows quick feedback
   const MIN_TIME_MS = 5 * 60 * 1000; // 5 minutes
+
   if (timeElapsedMs < MIN_TIME_MS) {
-    return 0;
+    return { apr: 0, belowThreshold: true };
   }
 
   // Convert to days
@@ -149,7 +150,7 @@ export function calculateAPR(params: {
   // Cap at 9999% to avoid display issues with extreme values
   const cappedApr = Math.min(apr, 9999);
 
-  return cappedApr;
+  return { apr: cappedApr, belowThreshold: false };
 }
 
 /**
