@@ -275,13 +275,16 @@ export function UniswapV3CollectFeesForm({
         </EvmAccountSwitchPrompt>
       )}
 
+      {/* Network Switch */}
+      {isConnected && !isWrongAccount && (
+        <NetworkSwitchStep chain={chain} isWrongNetwork={isWrongNetwork} />
+      )}
+
       {/* Transaction Steps */}
       {isConnected && !isWrongAccount && (
         <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 rounded-lg p-4">
           <h3 className="text-lg font-semibold text-white mb-4">Transaction</h3>
           <div className="space-y-3">
-            {/* Network Switch Step */}
-            <NetworkSwitchStep chain={chain} isWrongNetwork={isWrongNetwork} />
 
             {/* Collect Fees Transaction */}
             <TransactionStep

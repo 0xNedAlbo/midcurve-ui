@@ -289,10 +289,11 @@ export function UniswapV3IncreaseDepositForm({
         />
       </div>
 
+      {/* Network Switch */}
+      <NetworkSwitchStep chain={chain} isWrongNetwork={isWrongNetwork} />
+
       {/* Transaction Steps */}
       <div className="space-y-3">
-        {/* Network Switch */}
-        <NetworkSwitchStep chain={chain} isWrongNetwork={isWrongNetwork} />
 
         {/* Base Token Approval */}
         {requiredAmounts.baseAmount > 0n && (

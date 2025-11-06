@@ -135,16 +135,7 @@ export function UniswapV3WithdrawForm({
     const liquidity = BigInt(state.liquidity || '0');
     const sqrtPriceX96 = BigInt(currentSqrtPriceX96 || '0');
 
-    console.log('Position state:', {
-      liquidity: state.liquidity,
-      sqrtPriceX96: currentSqrtPriceX96,
-      refreshedPrice: refreshedSqrtPriceX96,
-      tickLower: config.tickLower,
-      tickUpper: config.tickUpper
-    });
-
     if (liquidity === 0n || sqrtPriceX96 === 0n) {
-      console.warn('Cannot calculate position value: liquidity or sqrtPriceX96 is 0');
       return 0n;
     }
 
@@ -178,7 +169,6 @@ export function UniswapV3WithdrawForm({
         }
       }
 
-      console.log('Calculated position value:', positionValueInQuote.toString());
       return positionValueInQuote;
     } catch (error) {
       console.error('Error calculating current position value:', error);
@@ -268,16 +258,10 @@ export function UniswapV3WithdrawForm({
   // Handle percentage slider change
   const handlePercentChange = useCallback(
     (percent: number) => {
-      console.log('handlePercentChange called:', {
-        percent,
-        currentPositionValue: currentPositionValue.toString(),
-        quoteTokenDecimals: quoteToken.decimals
-      });
       setWithdrawPercent(percent);
       const percentScaled = Math.floor(percent * 100);
       const quoteValue = (currentPositionValue * BigInt(percentScaled)) / 10000n;
       const formattedValue = formatUnits(quoteValue, quoteToken.decimals);
-      console.log('Setting quote value input to:', formattedValue);
       setQuoteValueInput(formattedValue);
     },
     [currentPositionValue, quoteToken.decimals]
@@ -371,7 +355,7 @@ export function UniswapV3WithdrawForm({
       {/* Withdrawal Amount Input */}
       <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 rounded-lg p-4 space-y-3">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-300 font-medium">
+          <span className="text-white font-medium">
             Withdrawal Amount ({quoteToken.symbol})
           </span>
         </div>
@@ -410,13 +394,9 @@ export function UniswapV3WithdrawForm({
       </div>
 
       {/* Preview Section */}
-      <div
-        className={`bg-slate-800/50 backdrop-blur-md border border-slate-700/50 rounded-lg p-4 ${
-          withdrawPercent === 0 ? 'opacity-50' : ''
-        }`}
-      >
+      <div className="bg-slate-800/50 backdrop-blur-md border border-slate-700/50 rounded-lg p-4">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-300 font-medium">You will receive:</span>
+          <span className="text-white font-medium">You will receive:</span>
           <div className="flex items-center gap-2">
             <button
               onClick={handleRefreshPool}
@@ -451,6 +431,11 @@ export function UniswapV3WithdrawForm({
         </EvmAccountSwitchPrompt>
       )}
 
+      {/* Network Switch */}
+      {isConnected && !isWrongAccount && (
+        <NetworkSwitchStep chain={chain} isWrongNetwork={isWrongNetwork} />
+      )}
+
       {/* Transaction Steps */}
       {isConnected && !isWrongAccount && (
         <div
@@ -460,8 +445,6 @@ export function UniswapV3WithdrawForm({
         >
         <h3 className="text-lg font-semibold text-white mb-4">Transaction</h3>
         <div className="space-y-3">
-          {/* Network Switch Step */}
-          <NetworkSwitchStep chain={chain} isWrongNetwork={isWrongNetwork} />
 
           {/* Withdraw (Multicall: Decrease + Collect) */}
           <TransactionStep
