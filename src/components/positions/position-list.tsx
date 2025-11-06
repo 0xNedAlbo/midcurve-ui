@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { RotateCcw } from "lucide-react";
+import { useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { RotateCcw, ArrowDownAZ, ArrowUpAZ } from "lucide-react";
 import { PositionCard } from "./position-card";
 import { EmptyStateActions } from "./empty-state-actions";
 import { usePositionsList } from "@/hooks/positions/usePositionsList";
@@ -22,12 +23,38 @@ interface PositionListProps {
   className?: string;
 }
 
+// Valid filter values for validation
+const VALID_STATUS_VALUES = ["all", "active", "closed"] as const;
+const VALID_CHAIN_VALUES = ["all", "ethereum", "arbitrum", "base"] as const;
+const VALID_SORT_VALUES = ["positionOpenedAt", "currentValue", "unrealizedPnl"] as const;
+
 export function PositionList({ className }: PositionListProps) {
-  // Filter state
-  const [sortBy, setSortBy] = useState<ListPositionsParams["sortBy"]>("createdAt");
-  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "closed">("active");
-  const [filterChain, setFilterChain] = useState("all");
-  const [offset, setOffset] = useState(0);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Read and validate filters from URL parameters with defaults
+  const statusParam = searchParams.get("status");
+  const filterStatus = (VALID_STATUS_VALUES.includes(statusParam as any)
+    ? statusParam
+    : "active") as "all" | "active" | "closed";
+
+  const chainParam = searchParams.get("chain");
+  const filterChain = (VALID_CHAIN_VALUES.includes(chainParam as any)
+    ? chainParam
+    : "all");
+
+  const sortParam = searchParams.get("sortBy");
+  const sortBy = (VALID_SORT_VALUES.includes(sortParam as any)
+    ? sortParam
+    : "currentValue") as ListPositionsParams["sortBy"];
+
+  const sortDirectionParam = searchParams.get("sortDirection");
+  const sortDirection = (sortDirectionParam === "asc" || sortDirectionParam === "desc"
+    ? sortDirectionParam
+    : "desc") as "asc" | "desc";
+
+  const offsetParam = searchParams.get("offset");
+  const offset = Math.max(0, parseInt(offsetParam || "0", 10));
   const limit = 20;
 
   // Build API query params
@@ -35,11 +62,11 @@ export function PositionList({ className }: PositionListProps) {
     () => ({
       status: filterStatus,
       sortBy,
-      sortDirection: "desc",
+      sortDirection,
       limit,
       offset,
     }),
-    [filterStatus, sortBy, offset]
+    [filterStatus, sortBy, sortDirection, offset]
   );
 
   // Fetch positions from API
@@ -69,30 +96,60 @@ export function PositionList({ className }: PositionListProps) {
   const hasMore = pagination ? pagination.hasMore : false;
   const total = pagination ? pagination.total : 0;
 
-  // Handle filter changes (reset offset on filter change)
+  // Update URL with new filter parameters
+  const updateUrl = (updates: {
+    status?: string;
+    chain?: string;
+    sortBy?: string;
+    sortDirection?: "asc" | "desc";
+    offset?: number;
+  }) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    // Apply updates
+    if (updates.status !== undefined) {
+      params.set("status", updates.status);
+      params.set("offset", "0"); // Reset pagination on filter change
+    }
+    if (updates.chain !== undefined) {
+      params.set("chain", updates.chain);
+      // No offset reset for client-side filter
+    }
+    if (updates.sortBy !== undefined) {
+      params.set("sortBy", updates.sortBy);
+      params.set("offset", "0"); // Reset pagination on filter change
+    }
+    if (updates.sortDirection !== undefined) {
+      params.set("sortDirection", updates.sortDirection);
+      params.set("offset", "0"); // Reset pagination on sort direction change
+    }
+    if (updates.offset !== undefined) {
+      params.set("offset", String(updates.offset));
+    }
+
+    // Navigate with shallow routing (no page reload)
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
+
+  // Handle filter changes
   const handleFilterChange = (filter: {
     status?: string;
     chain?: string;
     sortBy?: string;
   }) => {
-    if (filter.status) {
-      setFilterStatus(filter.status as "all" | "active" | "closed");
-      setOffset(0); // Reset pagination
-    }
-    if (filter.chain) {
-      setFilterChain(filter.chain);
-      // No offset reset for client-side filter
-    }
-    if (filter.sortBy) {
-      setSortBy(filter.sortBy as ListPositionsParams["sortBy"]);
-      setOffset(0); // Reset pagination
-    }
+    updateUrl(filter);
+  };
+
+  // Toggle sort direction
+  const toggleSortDirection = () => {
+    const newDirection = sortDirection === "desc" ? "asc" : "desc";
+    updateUrl({ sortDirection: newDirection });
   };
 
   // Load more handler
   const handleLoadMore = () => {
     if (!isLoading && hasMore) {
-      setOffset((prev) => prev + limit);
+      updateUrl({ offset: offset + limit });
     }
   };
 
@@ -133,16 +190,31 @@ export function PositionList({ className }: PositionListProps) {
           <option value="base">Base</option>
         </select>
 
-        {/* Sort By */}
-        <select
-          value={sortBy}
-          onChange={(e) => handleFilterChange({ sortBy: e.target.value })}
-          className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-        >
-          <option value="createdAt">Sort by: Created Date</option>
-          <option value="updatedAt">Sort by: Updated Date</option>
-          <option value="liquidity">Sort by: Liquidity</option>
-        </select>
+        {/* Sort By and Direction */}
+        <div className="flex items-center gap-2">
+          <select
+            value={sortBy}
+            onChange={(e) => handleFilterChange({ sortBy: e.target.value })}
+            className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          >
+            <option value="currentValue">Sort by: Current Value</option>
+            <option value="positionOpenedAt">Sort by: Position Opened Date</option>
+            <option value="unrealizedPnl">Sort by: Unrealized PnL</option>
+          </select>
+
+          {/* Sort Direction Toggle */}
+          <button
+            onClick={toggleSortDirection}
+            className="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-200 transition-colors cursor-pointer"
+            title={sortDirection === "desc" ? "Sort descending (high to low)" : "Sort ascending (low to high)"}
+          >
+            {sortDirection === "desc" ? (
+              <ArrowDownAZ className="w-4 h-4" />
+            ) : (
+              <ArrowUpAZ className="w-4 h-4" />
+            )}
+          </button>
+        </div>
 
         {/* Refresh Button - Only visible when "active" filter is selected */}
         {filterStatus === "active" && (
