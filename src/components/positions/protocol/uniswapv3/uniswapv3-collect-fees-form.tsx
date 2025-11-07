@@ -155,10 +155,6 @@ export function UniswapV3CollectFeesForm({
 
       if (!normalizedWalletAddress) {
         console.error('Wallet address not available');
-        setTimeout(() => {
-          onCollectSuccess?.();
-          onClose();
-        }, 2000);
         return;
       }
 
@@ -177,14 +173,19 @@ export function UniswapV3CollectFeesForm({
         recipient: normalizedWalletAddress,
       };
 
-      updateMutation.mutate({
-        chainId: config.chainId,
-        nftId: config.nftId.toString(),
-        events: [collectEvent],
-      });
-
-      // Trigger success callback but don't auto-close
-      onCollectSuccess?.();
+      updateMutation.mutate(
+        {
+          chainId: config.chainId,
+          nftId: config.nftId.toString(),
+          events: [collectEvent],
+        },
+        {
+          onSuccess: () => {
+            // Trigger success callback when position update completes
+            onCollectSuccess?.();
+          },
+        }
+      );
     }
   }, [
     collectFees.isSuccess,
@@ -296,8 +297,23 @@ export function UniswapV3CollectFeesForm({
               isComplete={collectFees.isSuccess}
               isDisabled={!canCollect}
               onExecute={handleCollect}
-              showExecute={!collectFees.isCollecting && !collectFees.isSuccess}
+              showExecute={!collectFees.isSuccess}
+              transactionHash={collectFees.receipt?.transactionHash}
+              chain={chain}
             />
+
+            {/* Update Position (Backend) */}
+            {collectFees.isSuccess && (
+              <TransactionStep
+                title="Update Position"
+                description="Updating position data..."
+                isLoading={updateMutation.isPending}
+                isComplete={updateMutation.isSuccess}
+                isDisabled={true}
+                onExecute={() => {}}
+                showExecute={false}
+              />
+            )}
           </div>
 
           {/* Error Display */}
@@ -314,35 +330,19 @@ export function UniswapV3CollectFeesForm({
               </div>
             </div>
           )}
-
-          {/* Success Display */}
-          {collectFees.isSuccess && (
-            <div className="mt-4 px-4 py-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                  <div className="w-2 h-2 rounded-full bg-green-400" />
-                </div>
-                <div>
-                  <h5 className="text-green-400 font-medium">Fees Collected</h5>
-                  <p className="text-green-200/80 text-sm mt-1">
-                    Your fees have been successfully collected and transferred to
-                    your wallet.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
-      {/* Success Close Button */}
-      {collectFees.isSuccess && (
-        <button
-          onClick={onClose}
-          className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors cursor-pointer"
-        >
-          Close
-        </button>
+      {/* Finish Button - Small green button at bottom right, only shown after position update completes */}
+      {updateMutation.isSuccess && (
+        <div className="flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
+          >
+            Finish
+          </button>
+        </div>
       )}
     </div>
   );

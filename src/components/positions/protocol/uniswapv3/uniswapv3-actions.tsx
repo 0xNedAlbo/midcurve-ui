@@ -71,7 +71,7 @@ export function UniswapV3Actions({ position }: UniswapV3ActionsProps) {
         onClose={() => setShowIncreaseModal(false)}
         position={position}
         onIncreaseSuccess={() => {
-          setShowIncreaseModal(false);
+          // Don't auto-close - user will click Finish button
           // Cache invalidation is handled by useUpdatePositionWithEvents
         }}
       />
@@ -82,7 +82,7 @@ export function UniswapV3Actions({ position }: UniswapV3ActionsProps) {
         onClose={() => setShowWithdrawModal(false)}
         position={position}
         onWithdrawSuccess={() => {
-          setShowWithdrawModal(false);
+          // Don't auto-close - user will click Finish button
           // Cache invalidation is handled by useUpdatePositionWithEvents
         }}
       />
@@ -93,7 +93,7 @@ export function UniswapV3Actions({ position }: UniswapV3ActionsProps) {
         onClose={() => setShowCollectFeesModal(false)}
         position={position}
         onCollectSuccess={() => {
-          setShowCollectFeesModal(false);
+          // Don't auto-close - user will click Finish button
           // Cache invalidation is handled by useUpdatePositionWithEvents
         }}
       />

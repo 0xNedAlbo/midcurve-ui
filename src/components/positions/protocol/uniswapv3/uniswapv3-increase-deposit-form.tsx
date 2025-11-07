@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { AlertCircle, Check } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import type { Address } from 'viem';
 import { getTokenAmountsFromLiquidity } from '@midcurve/shared';
@@ -20,10 +20,14 @@ import { PositionSizeConfig } from '@/components/positions/wizard/uniswapv3/posi
 import { apiClient } from '@/lib/api-client';
 import { useTokenApproval } from '@/hooks/positions/uniswapv3/wizard/useTokenApproval';
 import type { Erc20Token, UniswapV3Pool } from '@midcurve/shared';
+import { useErc20TokenBalance } from '@/hooks/tokens/erc20/useErc20TokenBalance';
+import { WalletBalanceSection } from '@/components/positions/wizard/uniswapv3/shared/wallet-balance-section';
+import { InsufficientFundsAlert, type InsufficientFundsInfo } from '@/components/positions/wizard/uniswapv3/shared/insufficient-funds-alert';
 
 interface UniswapV3IncreaseDepositFormProps {
   position: ListPositionData;
   onIncreaseSuccess?: () => void;
+  onClose: () => void;
 }
 
 /**
@@ -41,6 +45,7 @@ interface UniswapV3IncreaseDepositFormProps {
 export function UniswapV3IncreaseDepositForm({
   position,
   onIncreaseSuccess,
+  onClose,
 }: UniswapV3IncreaseDepositFormProps) {
   const [additionalLiquidity, setAdditionalLiquidity] = useState<bigint>(0n);
   const [isRefreshingPool, setIsRefreshingPool] = useState<boolean>(false);
@@ -110,6 +115,24 @@ export function UniswapV3IncreaseDepositForm({
   const quoteToken = position.isToken0Quote
     ? position.pool.token0
     : position.pool.token1;
+
+  // Fetch wallet balances with real-time Transfer event watching
+  const baseBalanceQuery = useErc20TokenBalance({
+    walletAddress: walletAddress || null,
+    tokenAddress: (baseToken.config as { address: Address }).address,
+    chainId: config.chainId,
+    enabled: isConnected && !isWrongNetwork && !isWrongAccount,
+  });
+
+  const quoteBalanceQuery = useErc20TokenBalance({
+    walletAddress: walletAddress || null,
+    tokenAddress: (quoteToken.config as { address: Address }).address,
+    chainId: config.chainId,
+    enabled: isConnected && !isWrongNetwork && !isWrongAccount,
+  });
+
+  const baseBalance = baseBalanceQuery.balanceBigInt || 0n;
+  const quoteBalance = quoteBalanceQuery.balanceBigInt || 0n;
 
   // Use refreshed pool if available, otherwise use position's pool
   const currentPool = (refreshedPool || position.pool) as UniswapV3Pool;
@@ -192,13 +215,38 @@ export function UniswapV3IncreaseDepositForm({
     position.isToken0Quote,
   ]);
 
+  // Calculate insufficient funds
+  const insufficientFunds: InsufficientFundsInfo | null = useMemo(() => {
+    if (!isConnected || isWrongNetwork || isWrongAccount) return null;
+
+    const needsBase = baseBalance < requiredAmounts.baseAmount;
+    const needsQuote = quoteBalance < requiredAmounts.quoteAmount;
+
+    if (!needsBase && !needsQuote) return null;
+
+    return {
+      needsBase,
+      needsQuote,
+      missingBase: needsBase ? requiredAmounts.baseAmount - baseBalance : 0n,
+      missingQuote: needsQuote ? requiredAmounts.quoteAmount - quoteBalance : 0n,
+    };
+  }, [
+    isConnected,
+    isWrongNetwork,
+    isWrongAccount,
+    baseBalance,
+    quoteBalance,
+    requiredAmounts.baseAmount,
+    requiredAmounts.quoteAmount,
+  ]);
+
   // Token approvals
   const baseTokenApproval = useTokenApproval({
     tokenAddress: (baseToken.config as { address: Address }).address,
     ownerAddress: walletAddress ?? null,
     requiredAmount: requiredAmounts.baseAmount,
     chainId: config.chainId,
-    enabled: isConnected && !isWrongNetwork && !isWrongAccount,
+    enabled: isConnected && !isWrongNetwork && !isWrongAccount && !insufficientFunds,
   });
 
   const quoteTokenApproval = useTokenApproval({
@@ -206,7 +254,7 @@ export function UniswapV3IncreaseDepositForm({
     ownerAddress: walletAddress ?? null,
     requiredAmount: requiredAmounts.quoteAmount,
     chainId: config.chainId,
-    enabled: isConnected && !isWrongNetwork && !isWrongAccount,
+    enabled: isConnected && !isWrongNetwork && !isWrongAccount && !insufficientFunds,
   });
 
   // Increase liquidity transaction
@@ -253,6 +301,20 @@ export function UniswapV3IncreaseDepositForm({
     // Don't include updateMutation in dependencies to prevent infinite loop
   ]);
 
+  // Pool data for WalletBalanceSection and InsufficientFundsAlert components
+  const poolData = {
+    token0: {
+      address: (position.pool.token0.config as { address: string }).address,
+      symbol: position.pool.token0.symbol,
+      decimals: position.pool.token0.decimals,
+    },
+    token1: {
+      address: (position.pool.token1.config as { address: string }).address,
+      symbol: position.pool.token1.symbol,
+      decimals: position.pool.token1.decimals,
+    },
+  };
+
   // Wallet connection prompt
   if (!isConnected) {
     return <EvmWalletConnectionPrompt />;
@@ -289,6 +351,32 @@ export function UniswapV3IncreaseDepositForm({
         />
       </div>
 
+      {/* Wallet Balance Section */}
+      <WalletBalanceSection
+        pool={poolData}
+        baseTokenAddress={(baseToken.config as { address: string }).address}
+        quoteTokenAddress={(quoteToken.config as { address: string }).address}
+        baseBalance={baseBalance}
+        quoteBalance={quoteBalance}
+        baseBalanceLoading={baseBalanceQuery.isLoading}
+        quoteBalanceLoading={quoteBalanceQuery.isLoading}
+        isConnected={isConnected}
+        isWrongNetwork={isWrongNetwork}
+        chain={chain}
+      />
+
+      {/* Insufficient Funds Alert with CowSwap Widget */}
+      {insufficientFunds && (
+        <InsufficientFundsAlert
+          insufficientFunds={insufficientFunds}
+          pool={poolData}
+          baseTokenAddress={(baseToken.config as { address: string }).address}
+          quoteTokenAddress={(quoteToken.config as { address: string }).address}
+          isConnected={isConnected}
+          chain={chain}
+        />
+      )}
+
       {/* Network Switch */}
       <NetworkSwitchStep chain={chain} isWrongNetwork={isWrongNetwork} />
 
@@ -310,6 +398,7 @@ export function UniswapV3IncreaseDepositForm({
             isDisabled={
               isWrongNetwork ||
               additionalLiquidity === 0n ||
+              !!insufficientFunds ||
               baseTokenApproval.isApproved
             }
             onExecute={() => baseTokenApproval.approve()}
@@ -330,6 +419,7 @@ export function UniswapV3IncreaseDepositForm({
             isDisabled={
               isWrongNetwork ||
               additionalLiquidity === 0n ||
+              !!insufficientFunds ||
               quoteTokenApproval.isApproved
             }
             onExecute={() => quoteTokenApproval.approve()}
@@ -349,16 +439,15 @@ export function UniswapV3IncreaseDepositForm({
           isDisabled={
             isWrongNetwork ||
             additionalLiquidity === 0n ||
+            !!insufficientFunds ||
             !baseTokenApproval.isApproved ||
             !quoteTokenApproval.isApproved ||
             increaseLiquidity.isSuccess
           }
           onExecute={() => increaseLiquidity.increase()}
-          showExecute={
-            !increaseLiquidity.isSuccess &&
-            !increaseLiquidity.isIncreasing &&
-            !increaseLiquidity.isWaitingForConfirmation
-          }
+          showExecute={!increaseLiquidity.isSuccess}
+          transactionHash={increaseLiquidity.receipt?.transactionHash}
+          chain={chain}
         />
 
         {/* Update Position (Backend) */}
@@ -409,23 +498,6 @@ export function UniswapV3IncreaseDepositForm({
         </div>
       )}
 
-      {/* Success Message */}
-      {updateMutation.isSuccess && (
-        <div className="bg-green-900/20 border border-green-600/50 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-green-200 font-medium">
-                Deposit Increased Successfully!
-              </p>
-              <p className="text-green-300/80 text-sm mt-1">
-                Your position has been updated with the additional liquidity.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Error Message */}
       {(increaseLiquidity.increaseError || updateMutation.isError) && (
         <div className="bg-red-900/20 border border-red-600/50 rounded-lg p-4">
@@ -439,6 +511,18 @@ export function UniswapV3IncreaseDepositForm({
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Finish Button - Small green button at bottom right, only shown after position update completes */}
+      {updateMutation.isSuccess && (
+        <div className="flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
+          >
+            Finish
+          </button>
         </div>
       )}
     </div>

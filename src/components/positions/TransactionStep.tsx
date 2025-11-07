@@ -1,6 +1,8 @@
 'use client';
 
-import { Loader2, Check, Circle } from 'lucide-react';
+import { Loader2, Check, Circle, ExternalLink } from 'lucide-react';
+import type { EvmChainSlug } from '@/config/chains';
+import { CHAIN_METADATA } from '@/config/chains';
 
 interface TransactionStepProps {
   title: string;
@@ -10,6 +12,8 @@ interface TransactionStepProps {
   isDisabled: boolean;
   onExecute: () => void;
   showExecute: boolean;
+  transactionHash?: string;
+  chain?: EvmChainSlug;
 }
 
 /**
@@ -26,6 +30,8 @@ export function TransactionStep({
   isDisabled,
   onExecute,
   showExecute,
+  transactionHash,
+  chain,
 }: TransactionStepProps) {
   return (
     <div className="flex items-start gap-3">
@@ -48,7 +54,22 @@ export function TransactionStep({
           }`}>
             {title}
           </h5>
-          {showExecute && !isComplete && !isLoading && (
+
+          {/* Block explorer link - shown when transaction hash exists */}
+          {transactionHash && chain && (
+            <a
+              href={`${CHAIN_METADATA[chain].explorer}/tx/${transactionHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
+              title="View transaction on block explorer"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          )}
+
+          {/* Execute button - shown only when showExecute is true, transaction hasn't started, and not loading/complete */}
+          {showExecute && !transactionHash && !isLoading && !isComplete && (
             <button
               onClick={onExecute}
               disabled={isDisabled}

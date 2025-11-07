@@ -312,10 +312,6 @@ export function UniswapV3WithdrawForm({
 
       if (!nftManagerAddress) {
         console.error('NFT Manager address not found for chain');
-        setTimeout(() => {
-          onWithdrawSuccess?.();
-          onClose();
-        }, 2000);
         return;
       }
 
@@ -323,15 +319,20 @@ export function UniswapV3WithdrawForm({
       const events = parsePositionEvents(decreaseLiquidity.receipt);
 
       if (events.length > 0) {
-        updateMutation.mutate({
-          chainId: config.chainId,
-          nftId: config.nftId.toString(),
-          events,
-        });
+        updateMutation.mutate(
+          {
+            chainId: config.chainId,
+            nftId: config.nftId.toString(),
+            events,
+          },
+          {
+            onSuccess: () => {
+              // Trigger success callback when position update completes
+              onWithdrawSuccess?.();
+            },
+          }
+        );
       }
-
-      // Trigger success callback but don't auto-close
-      onWithdrawSuccess?.();
     }
   }, [
     decreaseLiquidity.isSuccess,
@@ -453,8 +454,23 @@ export function UniswapV3WithdrawForm({
             isComplete={decreaseLiquidity.withdrawSuccess}
             isDisabled={!canWithdraw}
             onExecute={handleWithdraw}
-            showExecute={decreaseLiquidity.currentStep === 'idle'}
+            showExecute={!decreaseLiquidity.withdrawSuccess}
+            transactionHash={decreaseLiquidity.receipt?.transactionHash}
+            chain={chain}
           />
+
+          {/* Update Position (Backend) */}
+          {decreaseLiquidity.isSuccess && (
+            <TransactionStep
+              title="Update Position"
+              description="Updating position data..."
+              isLoading={updateMutation.isPending}
+              isComplete={updateMutation.isSuccess}
+              isDisabled={true}
+              onExecute={() => {}}
+              showExecute={false}
+            />
+          )}
         </div>
 
         {/* Error Display */}
@@ -474,14 +490,16 @@ export function UniswapV3WithdrawForm({
         </div>
       )}
 
-      {/* Success Close Button */}
-      {decreaseLiquidity.isSuccess && (
-        <button
-          onClick={onClose}
-          className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors cursor-pointer"
-        >
-          Close
-        </button>
+      {/* Finish Button - Small green button at bottom right, only shown after position update completes */}
+      {updateMutation.isSuccess && (
+        <div className="flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
+          >
+            Finish
+          </button>
+        </div>
       )}
     </div>
   );

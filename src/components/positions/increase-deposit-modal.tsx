@@ -45,6 +45,7 @@ export function IncreaseDepositModal({
         return (
           <UniswapV3IncreaseDepositForm
             position={position}
+            onClose={onClose}
             onIncreaseSuccess={onIncreaseSuccess}
           />
         );
