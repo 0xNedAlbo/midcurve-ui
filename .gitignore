@@ -55,5 +55,5 @@ yalc.lock
 /temp
 *.log
 
-# Prisma migrations (synced from services repo)
-/prisma/migrations/
+# Prisma (schema and migrations synced from @midcurve/services package)
+/prisma/

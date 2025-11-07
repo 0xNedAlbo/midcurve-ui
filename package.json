@@ -38,7 +38,7 @@
     "@cowprotocol/widget-lib": "^0.20.0",
     "@cowprotocol/widget-react": "^0.14.0",
     "@midcurve/api-shared": "https://github.com/0xNedAlbo/midcurve-api-shared.git#main",
-    "@midcurve/services": "https://github.com/0xNedAlbo/midcurve-services.git#main",
+    "@midcurve/services": "github:0xNedAlbo/midcurve-services#main",
     "@midcurve/shared": "https://github.com/0xNedAlbo/midcurve-shared.git#main",
     "@prisma/client": "^6.17.1",
     "@rainbow-me/rainbowkit": "^2.2.9",
