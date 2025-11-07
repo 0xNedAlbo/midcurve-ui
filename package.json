@@ -37,9 +37,9 @@
     "@auth/prisma-adapter": "^2.11.0",
     "@cowprotocol/widget-lib": "^0.20.0",
     "@cowprotocol/widget-react": "^0.14.0",
-    "@midcurve/api-shared": "https://github.com/0xNedAlbo/midcurve-api-shared.git#main",
+    "@midcurve/api-shared": "github:0xNedAlbo/midcurve-api-shared#main",
     "@midcurve/services": "github:0xNedAlbo/midcurve-services#main",
-    "@midcurve/shared": "https://github.com/0xNedAlbo/midcurve-shared.git#main",
+    "@midcurve/shared": "github:0xNedAlbo/midcurve-shared#main",
     "@prisma/client": "^6.17.1",
     "@rainbow-me/rainbowkit": "^2.2.9",
     "@tanstack/react-query": "^5.87.1",
@@ -64,11 +64,13 @@
     "use-debounce": "^10.0.6",
     "viem": "^2.37.3",
     "wagmi": "^2.16.9",
-    "zod": "^3.22.0"
+    "zod": "^3.22.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "postcss": "^8",
+    "tailwindcss": "^4.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
-    "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -76,9 +78,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "pino-pretty": "^13.1.2",
-    "postcss": "^8",
     "prisma": "^6.17.1",
-    "tailwindcss": "^4.0.0",
     "tsx": "^4.20.6",
     "typescript": "^5",
     "vitest": "^3.2.4"
