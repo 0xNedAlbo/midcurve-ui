@@ -22,12 +22,12 @@ const tabs = [
     label: "Overview",
   },
   {
-    id: "history",
+    id: "pnl-analysis",
     icon: Clock,
     label: "PnL Analysis",
   },
   {
-    id: "actions",
+    id: "apr-analysis",
     icon: TrendingUp,
     label: "APR Analysis",
   },

@@ -17,7 +17,7 @@ interface UniswapV3PositionDetailProps {
   isRefreshing?: boolean;
 }
 
-export type TabType = "overview" | "actions" | "history" | "technical";
+export type TabType = "overview" | "apr-analysis" | "pnl-analysis" | "technical";
 
 export function UniswapV3PositionDetail({ position, onRefresh, isRefreshing }: UniswapV3PositionDetailProps) {
   const searchParams = useSearchParams();
@@ -80,8 +80,8 @@ export function UniswapV3PositionDetail({ position, onRefresh, isRefreshing }: U
       {/* Tab Content */}
       <div className="mt-6">
         {activeTab === "overview" && <UniswapV3OverviewTab position={position} />}
-        {activeTab === "actions" && <UniswapV3ActionsTab position={position} />}
-        {activeTab === "history" && <UniswapV3HistoryTab position={position} />}
+        {activeTab === "apr-analysis" && <UniswapV3ActionsTab position={position} />}
+        {activeTab === "pnl-analysis" && <UniswapV3HistoryTab position={position} />}
         {activeTab === "technical" && <UniswapV3TechnicalTab position={position} />}
       </div>
     </div>
