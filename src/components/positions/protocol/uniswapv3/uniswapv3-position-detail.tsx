@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { GetUniswapV3PositionResponse } from "@midcurve/api-shared";
 import { PositionDetailHeader } from "../../position-detail-header";
@@ -24,14 +23,15 @@ export function UniswapV3PositionDetail({ position, onRefresh, isRefreshing }: U
   const searchParams = useSearchParams();
 
   // Get tab from URL query params, default to 'overview'
-  const tabFromUrl = (searchParams.get("tab") || "overview") as TabType;
-  const [activeTab] = useState<TabType>(tabFromUrl);
+  // Read directly from URL params (no state) so it updates when URL changes
+  const activeTab = (searchParams.get("tab") || "overview") as TabType;
 
   // Extract chain ID and NFT ID for header
   const config = position.config as { chainId: number; nftId: number; tickLower: number; tickUpper: number };
   const poolState = position.pool.state as { currentTick: number };
   const positionState = position.state as { liquidity: string };
   const chainMetadata = getChainMetadataByChainId(config.chainId);
+  const chainSlug = chainMetadata?.slug || 'ethereum';
 
   // Compute derived fields
   const isInRange = poolState.currentTick >= config.tickLower && poolState.currentTick <= config.tickUpper;
@@ -74,7 +74,7 @@ export function UniswapV3PositionDetail({ position, onRefresh, isRefreshing }: U
       {/* Tabs Navigation */}
       <PositionDetailTabs
         activeTab={activeTab}
-        basePath={`/positions/uniswapv3/${config.chainId}/${config.nftId}`}
+        basePath={`/positions/uniswapv3/${chainSlug}/${config.nftId}`}
       />
 
       {/* Tab Content */}
