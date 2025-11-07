@@ -58,37 +58,24 @@ export function useUpdatePositionWithEvents(
     },
 
     onSuccess: async (response) => {
-      const updatedPosition = response.data;
+      // apiClient already unwraps the response, so 'response' is the position data directly
+      const updatedPosition = response;
 
-      // Strategy 1: Optimistically update position in ALL list queries
-      queryClient.setQueriesData<ListPositionsResponse>(
-        { queryKey: queryKeys.positions.lists() },
-        (oldData) => {
-          if (!oldData) return oldData;
+      // Debug logging for position data
+      console.log('[useUpdatePositionWithEvents] Updated position:', {
+        id: updatedPosition.id,
+        realizedPnl: updatedPosition.realizedPnl,
+        unrealizedPnl: updatedPosition.unrealizedPnl,
+        collectedFees: updatedPosition.collectedFees,
+        unClaimedFees: updatedPosition.unClaimedFees,
+      });
 
-          // Replace the updated position in the list
-          return {
-            ...oldData,
-            data: oldData.data.map((p) =>
-              p.id === updatedPosition.id ? updatedPosition : p
-            ),
-          };
-        }
-      );
-
-      // Strategy 2: Cache the updated position detail
-      queryClient.setQueryData(
-        queryKeys.positions.uniswapv3.detail(
+      // Invalidate position detail (if user is viewing it)
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.positions.uniswapv3.detail(
           updatedPosition.config.chainId,
           updatedPosition.config.nftId.toString()
         ),
-        updatedPosition
-      );
-
-      // Strategy 3: Invalidate lists to refetch with correct server state
-      // Background refetch ensures eventual consistency
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.positions.lists(),
       });
     },
   });

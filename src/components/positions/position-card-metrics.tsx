@@ -43,9 +43,24 @@ export function PositionCardMetrics({
   pnlCurveSlot,
 }: PositionCardMetricsProps) {
   // Calculate total PnL: realizedPnl + unrealizedPnl + unclaimedFees + collectedFees
-  const totalPnl = (
-    BigInt(realizedPnl) + BigInt(unrealizedPnl) + BigInt(unClaimedFees) + BigInt(collectedFees)
-  ).toString();
+  // Add error handling for malformed BigInt strings
+  let totalPnl: string;
+  try {
+    const realized = BigInt(realizedPnl || '0');
+    const unrealized = BigInt(unrealizedPnl || '0');
+    const unclaimed = BigInt(unClaimedFees || '0');
+    const collected = BigInt(collectedFees || '0');
+    totalPnl = (realized + unrealized + unclaimed + collected).toString();
+  } catch (error) {
+    console.error('Error calculating total PnL:', {
+      realizedPnl,
+      unrealizedPnl,
+      unClaimedFees,
+      collectedFees,
+      error,
+    });
+    totalPnl = '0';
+  }
 
   // Format display values
   const formattedValue = formatCurrency(currentValue, quoteToken.decimals);
