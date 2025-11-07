@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "dev:pretty": "next dev -p 3000 | pino-pretty",
-    "build": "next build",
+    "build": "npm run prisma:migrate:deploy && next build",
     "start": "next start -p 3000",
+    "prisma:migrate:deploy": "echo 'Applying database migrations...' && prisma migrate deploy && echo '✓ Migrations applied successfully'",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
