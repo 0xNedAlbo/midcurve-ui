@@ -46,8 +46,10 @@ export function UniswapV3OverviewTab({ position }: UniswapV3OverviewTabProps) {
   // Calculate position states for all three scenarios
   const positionStates = calculatePositionStates(position, pnlBreakdown);
 
-  // Calculate break-even price
-  const breakEvenPrice = calculateBreakEvenPrice(position, pnlBreakdown);
+  // Calculate break-even price (only for active positions)
+  const breakEvenPrice = position.isActive
+    ? calculateBreakEvenPrice(position, pnlBreakdown)
+    : null;
 
   // Calculate human-readable prices for curve markers (unused for now)
   // const baseTokenConfig = baseToken.config as { address: string };

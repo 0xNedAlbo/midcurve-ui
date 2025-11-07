@@ -15,6 +15,7 @@ import { tickToPrice } from "@midcurve/shared";
 
 interface Position {
   isToken0Quote: boolean;
+  isActive: boolean;
   config: {
     tickLower: number;
     tickUpper: number;
@@ -68,39 +69,87 @@ export function UniswapV3RangeStatusLine({
     Number(baseToken.decimals)
   );
 
-  // Calculate current price from current tick
-  const currentTick = pool.state.currentTick;
-  const currentPrice = tickToPrice(
-    currentTick,
-    baseTokenConfig.address,
-    quoteTokenConfig.address,
-    Number(baseToken.decimals)
-  );
+  // Calculate current price from current tick (only for active positions)
+  let currentTick: number | null = null;
+  let currentPrice: bigint | null = null;
+  let isInRange = false;
+  let isBelowRange = false;
+  let distanceToLower = "";
+  let distanceToUpper = "";
+  let formattedCurrentPrice = "";
+  let currentPosition = 50;
+  let currentAlignment: "left" | "center" | "right" = "center";
 
-  // Determine if position is in range
-  const isInRange =
-    currentTick >= position.config.tickLower &&
-    currentTick <= position.config.tickUpper;
-  const isBelowRange = currentTick < position.config.tickLower;
+  if (position.isActive) {
+    currentTick = pool.state.currentTick;
+    currentPrice = tickToPrice(
+      currentTick,
+      baseTokenConfig.address,
+      quoteTokenConfig.address,
+      Number(baseToken.decimals)
+    );
 
-  // Calculate percentage distance from current price to other prices
-  const calculatePercentageDistance = (
-    fromPrice: bigint,
-    toPrice: bigint
-  ): string => {
-    if (fromPrice === 0n) return "0";
+    // Determine if position is in range
+    isInRange =
+      currentTick >= position.config.tickLower &&
+      currentTick <= position.config.tickUpper;
+    isBelowRange = currentTick < position.config.tickLower;
 
-    const difference = toPrice - fromPrice;
-    const percentage = (Number(difference) * 100) / Number(fromPrice);
+    // Calculate percentage distance from current price to other prices
+    const calculatePercentageDistance = (
+      fromPrice: bigint,
+      toPrice: bigint
+    ): string => {
+      if (fromPrice === 0n) return "0";
 
-    const sign = percentage > 0 ? "+" : "";
-    return `${sign}${percentage.toFixed(1)}%`;
-  };
+      const difference = toPrice - fromPrice;
+      const percentage = (Number(difference) * 100) / Number(fromPrice);
 
-  const distanceToLower = calculatePercentageDistance(currentPrice, lowerPrice);
-  const distanceToUpper = calculatePercentageDistance(currentPrice, upperPrice);
+      const sign = percentage > 0 ? "+" : "";
+      return `${sign}${percentage.toFixed(1)}%`;
+    };
 
-  // Format prices for display
+    distanceToLower = calculatePercentageDistance(currentPrice, lowerPrice);
+    distanceToUpper = calculatePercentageDistance(currentPrice, upperPrice);
+
+    // Format current price for display
+    formattedCurrentPrice = formatCompactValue(
+      currentPrice,
+      Number(quoteToken.decimals)
+    );
+
+    // Calculate positions using linear price scale
+    // Range always occupies center 60% (20%-80%)
+    const rangeWidth = upperPrice - lowerPrice;
+    const fullDisplayRange = (rangeWidth * 5n) / 3n; // range / 0.6 = range * 5/3
+    const leftEdgePrice = lowerPrice - rangeWidth / 3n;
+
+    // Calculate position on linear scale
+    const calculatePosition = (price: bigint): number => {
+      if (fullDisplayRange === 0n) return 50;
+
+      const offset = price - leftEdgePrice;
+      const position = (Number(offset) * 100) / Number(fullDisplayRange);
+
+      // Clamp to 0-100% range
+      return Math.max(0, Math.min(100, position));
+    };
+
+    currentPosition = calculatePosition(currentPrice);
+
+    // Helper function to determine label alignment
+    const getLabelAlignment = (
+      position: number
+    ): "left" | "center" | "right" => {
+      if (position <= 15) return "left";
+      if (position >= 85) return "right";
+      return "center";
+    };
+
+    currentAlignment = getLabelAlignment(currentPosition);
+  }
+
+  // Format prices for display (always needed)
   const formattedLowerPrice = formatCompactValue(
     lowerPrice,
     Number(quoteToken.decimals)
@@ -109,32 +158,10 @@ export function UniswapV3RangeStatusLine({
     upperPrice,
     Number(quoteToken.decimals)
   );
-  const formattedCurrentPrice = formatCompactValue(
-    currentPrice,
-    Number(quoteToken.decimals)
-  );
-
-  // Calculate positions using linear price scale
-  // Range always occupies center 60% (20%-80%)
-  const rangeWidth = upperPrice - lowerPrice;
-  const fullDisplayRange = (rangeWidth * 5n) / 3n; // range / 0.6 = range * 5/3
-  const leftEdgePrice = lowerPrice - rangeWidth / 3n;
-
-  // Calculate position on linear scale
-  const calculatePosition = (price: bigint): number => {
-    if (fullDisplayRange === 0n) return 50;
-
-    const offset = price - leftEdgePrice;
-    const position = (Number(offset) * 100) / Number(fullDisplayRange);
-
-    // Clamp to 0-100% range
-    return Math.max(0, Math.min(100, position));
-  };
 
   // Fixed positions for range boundaries
   const lowerPosition = 20; // Always at 20%
   const upperPosition = 80; // Always at 80%
-  const currentPosition = calculatePosition(currentPrice);
 
   // Helper function to determine label alignment
   const getLabelAlignment = (
@@ -147,7 +174,6 @@ export function UniswapV3RangeStatusLine({
 
   const lowerAlignment = getLabelAlignment(lowerPosition);
   const upperAlignment = getLabelAlignment(upperPosition);
-  const currentAlignment = getLabelAlignment(currentPosition);
 
   return (
     <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6">
@@ -255,82 +281,107 @@ export function UniswapV3RangeStatusLine({
           </div>
         </div>
 
-        {/* Current Price - Above Line */}
-        <div
-          className="absolute top-1/2"
-          style={{
-            left: `${currentPosition}%`,
-            transform:
-              currentAlignment === "left"
-                ? "translateX(0)"
-                : currentAlignment === "right"
-                ? "translateX(-100%)"
-                : "translateX(-50%)",
-          }}
-        >
-          {/* Label Above */}
+        {/* Current Price - Above Line (only for active positions) */}
+        {position.isActive ? (
           <div
-            className="flex flex-col px-3 absolute bottom-3"
+            className="absolute top-1/2"
             style={{
-              left:
-                currentAlignment === "left"
-                  ? "0"
-                  : currentAlignment === "right"
-                  ? "auto"
-                  : "50%",
-              right: currentAlignment === "right" ? "0" : "auto",
+              left: `${currentPosition}%`,
               transform:
-                currentAlignment === "center" ? "translateX(-50%)" : "none",
-              alignItems:
                 currentAlignment === "left"
-                  ? "flex-start"
+                  ? "translateX(0)"
                   : currentAlignment === "right"
-                  ? "flex-end"
-                  : "center",
+                  ? "translateX(-100%)"
+                  : "translateX(-50%)",
+            }}
+          >
+            {/* Label Above */}
+            <div
+              className="flex flex-col px-3 absolute bottom-3"
+              style={{
+                left:
+                  currentAlignment === "left"
+                    ? "0"
+                    : currentAlignment === "right"
+                    ? "auto"
+                    : "50%",
+                right: currentAlignment === "right" ? "0" : "auto",
+                transform:
+                  currentAlignment === "center" ? "translateX(-50%)" : "none",
+                alignItems:
+                  currentAlignment === "left"
+                    ? "flex-start"
+                    : currentAlignment === "right"
+                    ? "flex-end"
+                    : "center",
+              }}
+            >
+              <div
+                className={`text-sm font-medium whitespace-nowrap ${
+                  isInRange ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                {formattedCurrentPrice} {quoteToken.symbol}
+              </div>
+              <div
+                className={`text-xs whitespace-nowrap ${
+                  isInRange ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                Current Price
+              </div>
+              <div className="text-xs text-slate-400 mt-0.5 whitespace-nowrap">
+                {isInRange
+                  ? `${distanceToLower} to lower • ${distanceToUpper} to upper`
+                  : isBelowRange
+                  ? `${distanceToLower} to lower`
+                  : `${distanceToUpper} to upper`}
+              </div>
+            </div>
+            {/* Scale Marker - Colored */}
+            <div
+              className={`absolute -top-3 text-lg font-bold ${
+                isInRange ? "text-green-400" : "text-red-400"
+              }`}
+              style={{
+                left:
+                  currentAlignment === "left"
+                    ? "0"
+                    : currentAlignment === "right"
+                    ? "auto"
+                    : "50%",
+                right: currentAlignment === "right" ? "0" : "auto",
+                transform:
+                  currentAlignment === "center" ? "translateX(-50%)" : "none",
+              }}
+            >
+              |
+            </div>
+          </div>
+        ) : (
+          /* Position Closed Badge - Centered Above Line */
+          <div
+            className="absolute top-1/2"
+            style={{
+              left: "50%",
+              transform: "translateX(-50%)",
             }}
           >
             <div
-              className={`text-sm font-medium whitespace-nowrap ${
-                isInRange ? "text-green-400" : "text-red-400"
-              }`}
+              className="flex flex-col items-center px-3 absolute bottom-3"
+              style={{
+                left: "50%",
+                transform: "translateX(-50%)",
+              }}
             >
-              {formattedCurrentPrice} {quoteToken.symbol}
-            </div>
-            <div
-              className={`text-xs whitespace-nowrap ${
-                isInRange ? "text-green-400" : "text-red-400"
-              }`}
-            >
-              Current Price
-            </div>
-            <div className="text-xs text-slate-400 mt-0.5 whitespace-nowrap">
-              {isInRange
-                ? `${distanceToLower} to lower • ${distanceToUpper} to upper`
-                : isBelowRange
-                ? `${distanceToLower} to lower`
-                : `${distanceToUpper} to upper`}
+              <div className="px-3 py-1 bg-slate-700/50 border border-slate-600/50 rounded-lg">
+                <div className="text-sm font-medium text-slate-400 whitespace-nowrap">
+                  Position Closed
+                </div>
+              </div>
             </div>
           </div>
-          {/* Scale Marker - Colored */}
-          <div
-            className={`absolute -top-3 text-lg font-bold ${
-              isInRange ? "text-green-400" : "text-red-400"
-            }`}
-            style={{
-              left:
-                currentAlignment === "left"
-                  ? "0"
-                  : currentAlignment === "right"
-                  ? "auto"
-                  : "50%",
-              right: currentAlignment === "right" ? "0" : "auto",
-              transform:
-                currentAlignment === "center" ? "translateX(-50%)" : "none",
-            }}
-          >
-            |
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
