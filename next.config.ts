@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   /* Next.js Configuration */
   reactStrictMode: true,
 
+  /* Transpile Packages */
+  transpilePackages: ['@midcurve/shared', '@midcurve/services', '@midcurve/api-shared'],
+
   /* Image Configuration */
   images: {
     remotePatterns: [
