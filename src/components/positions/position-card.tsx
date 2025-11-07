@@ -133,6 +133,15 @@ export function PositionCard({ position, listIndex }: PositionCardProps) {
         <div className="flex items-center gap-1 md:gap-2 ml-auto">
           <Link
             href={`/positions/${position.protocol}/${getPositionPath(position)}`}
+            onClick={() => {
+              // Store current dashboard URL for back navigation
+              if (typeof window !== "undefined") {
+                const currentUrl = window.location.pathname + window.location.search;
+                import("@/lib/dashboard-referrer").then(({ storeDashboardUrl }) => {
+                  storeDashboardUrl(currentUrl);
+                });
+              }
+            }}
             className="p-1.5 md:p-2 hover:bg-slate-700/50 rounded-lg transition-colors cursor-pointer"
             title="View Details"
           >
