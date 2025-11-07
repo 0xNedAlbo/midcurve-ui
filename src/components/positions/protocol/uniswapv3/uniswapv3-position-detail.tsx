@@ -5,7 +5,7 @@ import type { GetUniswapV3PositionResponse } from "@midcurve/api-shared";
 import { PositionDetailHeader } from "../../position-detail-header";
 import { PositionDetailTabs } from "../../position-detail-tabs";
 import { UniswapV3OverviewTab } from "./uniswapv3-overview-tab";
-import { UniswapV3ActionsTab } from "./uniswapv3-actions-tab";
+import { UniswapV3AprTab } from "./uniswapv3-apr-tab";
 import { UniswapV3HistoryTab } from "./uniswapv3-history-tab";
 import { UniswapV3TechnicalTab } from "./uniswapv3-technical-tab";
 import { getChainMetadataByChainId } from "@/config/chains";
@@ -80,7 +80,7 @@ export function UniswapV3PositionDetail({ position, onRefresh, isRefreshing }: U
       {/* Tab Content */}
       <div className="mt-6">
         {activeTab === "overview" && <UniswapV3OverviewTab position={position} />}
-        {activeTab === "apr-analysis" && <UniswapV3ActionsTab position={position} />}
+        {activeTab === "apr-analysis" && <UniswapV3AprTab position={position} />}
         {activeTab === "pnl-analysis" && <UniswapV3HistoryTab position={position} />}
         {activeTab === "technical" && <UniswapV3TechnicalTab position={position} />}
       </div>
