@@ -79,25 +79,18 @@ export function UniswapV3IncreaseDepositForm({
   const chain = getChainSlugFromChainId(config.chainId);
   const chainConfig = chain ? CHAIN_METADATA[chain] : null;
 
-  // Validate chain configuration
-  if (!chain || !chainConfig) {
-    console.error('Invalid chain configuration for chainId:', config.chainId);
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-400">
-          Invalid chain configuration: Chain ID {config.chainId}
-        </p>
-        <p className="text-slate-400 text-sm mt-2">
-          This position cannot be modified at this time.
-        </p>
-      </div>
-    );
-  }
+  // Token info for display
+  const baseToken = position.isToken0Quote
+    ? position.pool.token1
+    : position.pool.token0;
+  const quoteToken = position.isToken0Quote
+    ? position.pool.token0
+    : position.pool.token1;
 
   // Check if wallet is connected to the wrong network
   const isWrongNetwork = !!(
     isConnected &&
-    connectedChainId !== chainConfig.chainId
+    connectedChainId !== chainConfig?.chainId
   );
 
   // Check if connected wallet is the position owner
@@ -108,15 +101,7 @@ export function UniswapV3IncreaseDepositForm({
     walletAddress.toLowerCase() !== state.ownerAddress.toLowerCase()
   );
 
-  // Token info for display
-  const baseToken = position.isToken0Quote
-    ? position.pool.token1
-    : position.pool.token0;
-  const quoteToken = position.isToken0Quote
-    ? position.pool.token0
-    : position.pool.token1;
-
-  // Fetch wallet balances with real-time Transfer event watching
+  // Fetch wallet balances with real-time Transfer event watching (MUST be called before any returns)
   const baseBalanceQuery = useErc20TokenBalance({
     walletAddress: walletAddress || null,
     tokenAddress: (baseToken.config as { address: Address }).address,
@@ -137,7 +122,7 @@ export function UniswapV3IncreaseDepositForm({
   // Use refreshed pool if available, otherwise use position's pool
   const currentPool = (refreshedPool || position.pool) as UniswapV3Pool;
 
-  // Handle pool price refresh
+  // Handle pool price refresh (MUST be called before any returns)
   const handleRefreshPool = useCallback(async () => {
     if (isRefreshingPool) return;
 
@@ -160,13 +145,13 @@ export function UniswapV3IncreaseDepositForm({
     }
   }, [isRefreshingPool, position.pool.config, config.chainId]);
 
-  // Refresh pool state once when modal opens
+  // Refresh pool state once when modal opens (MUST be called before any returns)
   useEffect(() => {
     handleRefreshPool();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array = run once on mount
 
-  // Calculate required token amounts from additional liquidity
+  // Calculate required token amounts from additional liquidity (MUST be called before any returns)
   const requiredAmounts = useMemo(() => {
     const poolState = currentPool.state;
     const sqrtPriceX96 = BigInt(poolState.sqrtPriceX96);
@@ -215,7 +200,7 @@ export function UniswapV3IncreaseDepositForm({
     position.isToken0Quote,
   ]);
 
-  // Calculate insufficient funds
+  // Calculate insufficient funds (MUST be called before any returns)
   const insufficientFunds: InsufficientFundsInfo | null = useMemo(() => {
     if (!isConnected || isWrongNetwork || isWrongAccount) return null;
 
@@ -240,7 +225,7 @@ export function UniswapV3IncreaseDepositForm({
     requiredAmounts.quoteAmount,
   ]);
 
-  // Token approvals
+  // Token approvals (MUST be called before any returns)
   const baseTokenApproval = useTokenApproval({
     tokenAddress: (baseToken.config as { address: Address }).address,
     ownerAddress: walletAddress ?? null,
@@ -273,7 +258,7 @@ export function UniswapV3IncreaseDepositForm({
 
   const increaseLiquidity = useIncreaseLiquidity(increaseLiquidityParams);
 
-  // Update position via PATCH endpoint when transaction succeeds
+  // Update position via PATCH endpoint when transaction succeeds (MUST be called before any returns)
   useEffect(() => {
     if (increaseLiquidity.isSuccess && increaseLiquidity.receipt && !updateMutation.isPending && !updateMutation.isSuccess) {
       const events = parsePositionEvents(increaseLiquidity.receipt);
@@ -300,6 +285,21 @@ export function UniswapV3IncreaseDepositForm({
     increaseLiquidity.receipt,
     // Don't include updateMutation in dependencies to prevent infinite loop
   ]);
+
+  // Validate chain configuration
+  if (!chain || !chainConfig) {
+    console.error('Invalid chain configuration for chainId:', config.chainId);
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-400">
+          Invalid chain configuration: Chain ID {config.chainId}
+        </p>
+        <p className="text-slate-400 text-sm mt-2">
+          This position cannot be modified at this time.
+        </p>
+      </div>
+    );
+  }
 
   // Pool data for WalletBalanceSection and InsufficientFundsAlert components
   const poolData = {

@@ -16,6 +16,23 @@ export default function PositionDetailPage() {
   const chainSlug = params?.chain as string | undefined;
   const nftId = params?.nftId as string | undefined;
 
+  // Get chain metadata early (before hooks)
+  const chainMetadata = chainSlug && isValidChainSlug(chainSlug)
+    ? getChainMetadata(chainSlug as EvmChainSlug)
+    : null;
+  const chainId = chainMetadata?.chainId || 1; // Default to mainnet for hook call
+
+  // Fetch position using the hook (MUST be called before any returns)
+  const { data: position, isLoading, isFetching, error, refetch } = useUniswapV3Position(chainId, nftId || "0");
+
+  // If we have incomplete cached data, trigger a refetch
+  // This can happen when React Query caches list data that doesn't have full position details
+  useEffect(() => {
+    if (position && !position.protocol && !isFetching) {
+      refetch();
+    }
+  }, [position, isFetching, refetch]);
+
   // Handle loading state when params aren't ready yet
   if (!protocol || !chainSlug || !nftId) {
     return (
@@ -81,8 +98,7 @@ export default function PositionDetailPage() {
     );
   }
 
-  // Convert chain slug to chainId
-  const chainMetadata = getChainMetadata(chainSlug as EvmChainSlug);
+  // Check if we got valid chain metadata
   if (!chainMetadata) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
@@ -104,19 +120,6 @@ export default function PositionDetailPage() {
       </div>
     );
   }
-
-  const chainId = chainMetadata.chainId;
-
-  // Fetch position using the hook
-  const { data: position, isLoading, isFetching, error, refetch } = useUniswapV3Position(chainId, nftId);
-
-  // If we have incomplete cached data, trigger a refetch
-  // This can happen when React Query caches list data that doesn't have full position details
-  useEffect(() => {
-    if (position && !position.protocol && !isFetching) {
-      refetch();
-    }
-  }, [position, isFetching, refetch]);
 
   // Loading state - check for initial loading or incomplete data (exclude isFetching to allow background refresh)
   if (isLoading || (position && !position.protocol)) {

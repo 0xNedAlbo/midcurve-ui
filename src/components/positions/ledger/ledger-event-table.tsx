@@ -206,7 +206,7 @@ export function LedgerEventTable({
       <div className="px-6 py-4 border-b border-slate-700/50">
         <h3 className="text-lg font-semibold text-white">Position Ledger</h3>
         <p className="text-sm text-slate-400 mt-1">
-          Complete history of your position's liquidity changes and fee collections
+          Complete history of your position&apos;s liquidity changes and fee collections
         </p>
         <div className="text-xs text-slate-500 mt-2">
           Total Events: {events.length}

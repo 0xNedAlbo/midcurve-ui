@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
-import { AlertCircle, X } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import type { Address } from 'viem';
 import { normalizeAddress } from '@midcurve/shared';
@@ -67,39 +67,6 @@ export function UniswapV3CollectFeesForm({
   const chain = getChainSlugFromChainId(config.chainId);
   const chainConfig = chain ? CHAIN_METADATA[chain] : null;
 
-  // Validate chain configuration
-  if (!chain || !chainConfig) {
-    console.error('Invalid chain configuration for chainId:', config.chainId);
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-400">
-          Invalid chain configuration: Chain ID {config.chainId}
-        </p>
-        <p className="text-slate-400 text-sm mt-2">
-          This position's fees cannot be collected at this time.
-        </p>
-      </div>
-    );
-  }
-
-  // Check if wallet is connected to the wrong network
-  const isWrongNetwork = !!(
-    isConnected &&
-    connectedChainId !== chainConfig.chainId
-  );
-
-  // Check if connected wallet is the position owner
-  const isWrongAccount = !!(
-    isConnected &&
-    walletAddress &&
-    state.ownerAddress &&
-    walletAddress.toLowerCase() !== state.ownerAddress.toLowerCase()
-  );
-
-  // Token info for display
-  const baseToken = position.isToken0Quote ? position.pool.token1 : position.pool.token0;
-  const quoteToken = position.isToken0Quote ? position.pool.token0 : position.pool.token1;
-
   // Get unclaimed fees from position (total in quote tokens)
   const unclaimedFees = BigInt(position.unClaimedFees || '0');
 
@@ -111,7 +78,7 @@ export function UniswapV3CollectFeesForm({
   const baseTokenAmount = position.isToken0Quote ? token1Amount : token0Amount;
   const quoteTokenAmount = position.isToken0Quote ? token0Amount : token1Amount;
 
-  // Prepare collect fees parameters
+  // Prepare collect fees parameters (MUST be called before any returns)
   const collectParams = useMemo(() => {
     if (!walletAddress || unclaimedFees === 0n) {
       return null;
@@ -124,21 +91,17 @@ export function UniswapV3CollectFeesForm({
     };
   }, [walletAddress, unclaimedFees, config.nftId, config.chainId]);
 
-  // Collect fees hook
+  // Collect fees hook (MUST be called before any returns)
   const collectFees = useCollectFees(collectParams);
 
-  // Reset state when form opens
+  // Reset state when form opens (MUST be called before any returns)
   useEffect(() => {
     updateMutation.reset();
     collectFees.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
-  // Handle collect execution
-  const handleCollect = () => {
-    collectFees.collect();
-  };
-
-  // Handle successful collection - seed events via PATCH endpoint
+  // Handle successful collection - seed events via PATCH endpoint (MUST be called before any returns)
   useEffect(() => {
     if (
       collectFees.isSuccess &&
@@ -192,12 +155,51 @@ export function UniswapV3CollectFeesForm({
     collectFees.receipt,
     collectFees.collectedAmount0,
     collectFees.collectedAmount1,
+    collectFees.collectLogIndex,
     config.chainId,
     config.nftId,
     walletAddress,
     onCollectSuccess,
     updateMutation,
   ]);
+
+  // Validate chain configuration
+  if (!chain || !chainConfig) {
+    console.error('Invalid chain configuration for chainId:', config.chainId);
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-400">
+          Invalid chain configuration: Chain ID {config.chainId}
+        </p>
+        <p className="text-slate-400 text-sm mt-2">
+          This position&apos;s fees cannot be collected at this time.
+        </p>
+      </div>
+    );
+  }
+
+  // Check if wallet is connected to the wrong network
+  const isWrongNetwork = !!(
+    isConnected &&
+    connectedChainId !== chainConfig.chainId
+  );
+
+  // Check if connected wallet is the position owner
+  const isWrongAccount = !!(
+    isConnected &&
+    walletAddress &&
+    state.ownerAddress &&
+    walletAddress.toLowerCase() !== state.ownerAddress.toLowerCase()
+  );
+
+  // Token info for display
+  const baseToken = position.isToken0Quote ? position.pool.token1 : position.pool.token0;
+  const quoteToken = position.isToken0Quote ? position.pool.token0 : position.pool.token1;
+
+  // Handle collect execution
+  const handleCollect = () => {
+    collectFees.collect();
+  };
 
   // Validation
   const canCollect =

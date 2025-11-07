@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
+import { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { RotateCcw, ArrowDownAZ, ArrowUpAZ } from "lucide-react";
 import { PositionCard } from "./position-card";
@@ -180,7 +180,7 @@ export function PositionList({ className }: PositionListProps) {
 
         {/* Chain Filter */}
         <select
-          value={filterChain}
+          value={filterChain ?? undefined}
           onChange={(e) => handleFilterChange({ chain: e.target.value })}
           className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
         >

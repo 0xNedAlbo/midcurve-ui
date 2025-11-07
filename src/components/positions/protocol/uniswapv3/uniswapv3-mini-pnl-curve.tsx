@@ -174,7 +174,7 @@ export function UniswapV3MiniPnLCurve({
       console.error("Error generating Uniswap V3 PnL curve:", error);
       return null;
     }
-  }, [position]);
+  }, [position, overrideTick]);
 
   // Show N/A state when curve data is unavailable
   if (!curveData || !curveData.points || curveData.points.length === 0) {

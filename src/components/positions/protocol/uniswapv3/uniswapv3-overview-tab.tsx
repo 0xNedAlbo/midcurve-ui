@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { formatCompactValue } from "@/lib/fraction-format";
 import { calculatePositionStates, calculateBreakEvenPrice } from "@/lib/position-states";
 import { usePnLDisplayValues } from "@/hooks/positions/usePnLDisplayValues";
@@ -233,10 +234,12 @@ export function UniswapV3OverviewTab({ position }: UniswapV3OverviewTabProps) {
                   <span className="text-slate-400">Base Token:</span>
                   <div className="flex items-center gap-2 text-white">
                     {baseToken.logoUrl && (
-                      <img
+                      <Image
                         src={baseToken.logoUrl}
                         alt={baseToken.symbol}
-                        className="w-4 h-4 rounded-full"
+                        width={16}
+                        height={16}
+                        className="rounded-full"
                       />
                     )}
                     <span>
@@ -252,10 +255,12 @@ export function UniswapV3OverviewTab({ position }: UniswapV3OverviewTabProps) {
                   <span className="text-slate-400">Quote Token:</span>
                   <div className="flex items-center gap-2 text-white">
                     {quoteToken.logoUrl && (
-                      <img
+                      <Image
                         src={quoteToken.logoUrl}
                         alt={quoteToken.symbol}
-                        className="w-4 h-4 rounded-full"
+                        width={16}
+                        height={16}
+                        className="rounded-full"
                       />
                     )}
                     <span>
@@ -353,10 +358,12 @@ export function UniswapV3OverviewTab({ position }: UniswapV3OverviewTabProps) {
                   <span className="text-slate-400">Base Token:</span>
                   <div className="flex items-center gap-2 text-white">
                     {baseToken.logoUrl && (
-                      <img
+                      <Image
                         src={baseToken.logoUrl}
                         alt={baseToken.symbol}
-                        className="w-4 h-4 rounded-full"
+                        width={16}
+                        height={16}
+                        className="rounded-full"
                       />
                     )}
                     <span>
@@ -372,10 +379,12 @@ export function UniswapV3OverviewTab({ position }: UniswapV3OverviewTabProps) {
                   <span className="text-slate-400">Quote Token:</span>
                   <div className="flex items-center gap-2 text-white">
                     {quoteToken.logoUrl && (
-                      <img
+                      <Image
                         src={quoteToken.logoUrl}
                         alt={quoteToken.symbol}
-                        className="w-4 h-4 rounded-full"
+                        width={16}
+                        height={16}
+                        className="rounded-full"
                       />
                     )}
                     <span>
@@ -473,10 +482,12 @@ export function UniswapV3OverviewTab({ position }: UniswapV3OverviewTabProps) {
                   <span className="text-slate-400">Base Token:</span>
                   <div className="flex items-center gap-2 text-white">
                     {baseToken.logoUrl && (
-                      <img
+                      <Image
                         src={baseToken.logoUrl}
                         alt={baseToken.symbol}
-                        className="w-4 h-4 rounded-full"
+                        width={16}
+                        height={16}
+                        className="rounded-full"
                       />
                     )}
                     <span>
@@ -492,10 +503,12 @@ export function UniswapV3OverviewTab({ position }: UniswapV3OverviewTabProps) {
                   <span className="text-slate-400">Quote Token:</span>
                   <div className="flex items-center gap-2 text-white">
                     {quoteToken.logoUrl && (
-                      <img
+                      <Image
                         src={quoteToken.logoUrl}
                         alt={quoteToken.symbol}
-                        className="w-4 h-4 rounded-full"
+                        width={16}
+                        height={16}
+                        className="rounded-full"
                       />
                     )}
                     <span>

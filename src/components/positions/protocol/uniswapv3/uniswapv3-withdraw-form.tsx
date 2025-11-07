@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { AlertCircle, Check, Loader2, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import type { Address } from 'viem';
 import { formatUnits } from 'viem';
@@ -59,7 +59,6 @@ export function UniswapV3WithdrawForm({
   const config = position.config as { chainId: number; nftId: number; tickLower: number; tickUpper: number };
   const state = position.state as { liquidity: string; ownerAddress: string };
   const poolState = position.pool.state as { sqrtPriceX96: string };
-  const poolConfig = position.pool.config as { chainId: number };
 
   // Map chainId to chain slug
   const getChainSlugFromChainId = (chainId: number): EvmChainSlug | null => {
@@ -72,25 +71,17 @@ export function UniswapV3WithdrawForm({
   const chain = getChainSlugFromChainId(config.chainId);
   const chainConfig = chain ? CHAIN_METADATA[chain] : null;
 
-  // Validate chain configuration
-  if (!chain || !chainConfig) {
-    console.error('Invalid chain configuration for chainId:', config.chainId);
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-400">
-          Invalid chain configuration: Chain ID {config.chainId}
-        </p>
-        <p className="text-slate-400 text-sm mt-2">
-          This position cannot be withdrawn at this time.
-        </p>
-      </div>
-    );
-  }
+  // Token info for display
+  const baseToken = position.isToken0Quote ? position.pool.token1 : position.pool.token0;
+  const quoteToken = position.isToken0Quote ? position.pool.token0 : position.pool.token1;
+
+  // Use refreshed pool price if available, otherwise use position's pool state
+  const currentSqrtPriceX96 = refreshedSqrtPriceX96 || poolState.sqrtPriceX96;
 
   // Check if wallet is connected to the wrong network
   const isWrongNetwork = !!(
     isConnected &&
-    connectedChainId !== chainConfig.chainId
+    connectedChainId !== chainConfig?.chainId
   );
 
   // Check if connected wallet is the position owner
@@ -101,14 +92,7 @@ export function UniswapV3WithdrawForm({
     walletAddress.toLowerCase() !== state.ownerAddress.toLowerCase()
   );
 
-  // Token info for display
-  const baseToken = position.isToken0Quote ? position.pool.token1 : position.pool.token0;
-  const quoteToken = position.isToken0Quote ? position.pool.token0 : position.pool.token1;
-
-  // Use refreshed pool price if available, otherwise use position's pool state
-  const currentSqrtPriceX96 = refreshedSqrtPriceX96 || poolState.sqrtPriceX96;
-
-  // Handle pool price refresh
+  // Handle pool price refresh (MUST be called before any returns)
   const handleRefreshPool = useCallback(async () => {
     if (isRefreshing) return;
 
@@ -174,7 +158,7 @@ export function UniswapV3WithdrawForm({
       console.error('Error calculating current position value:', error);
       return 0n;
     }
-  }, [state.liquidity, currentSqrtPriceX96, refreshedSqrtPriceX96, config.tickLower, config.tickUpper, position.isToken0Quote]);
+  }, [state.liquidity, currentSqrtPriceX96, config.tickLower, config.tickUpper, position.isToken0Quote]);
 
   // Calculate liquidity to remove based on percentage
   const liquidityToRemove = useMemo(() => {
@@ -247,6 +231,7 @@ export function UniswapV3WithdrawForm({
   useEffect(() => {
     updateMutation.reset();
     decreaseLiquidity.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
   // Auto-refresh pool price when modal opens
@@ -296,11 +281,11 @@ export function UniswapV3WithdrawForm({
   );
 
   // Handle withdraw execution
-  const handleWithdraw = () => {
+  const handleWithdraw = useCallback(() => {
     decreaseLiquidity.withdraw();
-  };
+  }, [decreaseLiquidity]);
 
-  // Handle successful withdrawal - seed events via PATCH endpoint
+  // Handle successful withdrawal - seed events via PATCH endpoint (MUST be called before any returns)
   useEffect(() => {
     if (
       decreaseLiquidity.isSuccess &&
@@ -334,14 +319,30 @@ export function UniswapV3WithdrawForm({
         );
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     decreaseLiquidity.isSuccess,
     decreaseLiquidity.receipt,
     config.chainId,
     config.nftId,
     onWithdrawSuccess,
-    updateMutation,
+    // Don't include updateMutation in dependencies to prevent infinite loop
   ]);
+
+  // Validate chain configuration
+  if (!chain || !chainConfig) {
+    console.error('Invalid chain configuration for chainId:', config.chainId);
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-400">
+          Invalid chain configuration: Chain ID {config.chainId}
+        </p>
+        <p className="text-slate-400 text-sm mt-2">
+          This position cannot be withdrawn at this time.
+        </p>
+      </div>
+    );
+  }
 
   // Validation
   const canWithdraw =

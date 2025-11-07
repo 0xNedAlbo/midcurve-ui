@@ -17,7 +17,6 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import type {
   UpdateUniswapV3PositionRequest,
   UpdateUniswapV3PositionResponse,
-  ListPositionsResponse,
 } from '@midcurve/api-shared';
 
 interface UpdatePositionWithEventsParams {
@@ -58,8 +57,8 @@ export function useUpdatePositionWithEvents(
     },
 
     onSuccess: async (response) => {
-      // apiClient already unwraps the response, so 'response' is the position data directly
-      const updatedPosition = response;
+      // apiClient already unwraps the response data field
+      const updatedPosition = response.data;
 
       // Debug logging for position data
       console.log('[useUpdatePositionWithEvents] Updated position:', {

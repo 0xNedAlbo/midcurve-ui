@@ -212,7 +212,7 @@ export class Erc20TransferEventManager {
    * @param tokenKey - Key for watchers Map
    */
   private createWatcher(
-    chainId: number,
+    _chainId: number,
     tokenAddress: string,
     tokenKey: string
   ): void {
@@ -292,8 +292,8 @@ export class Erc20TransferEventManager {
   private unsubscribe(
     tokenKey: string,
     subscriberId: SubscriberId,
-    chainId: number,
-    tokenAddress: string
+    _chainId: number,
+    _tokenAddress: string
   ): void {
     const watcher = this.watchers.get(tokenKey);
     if (!watcher) return;
